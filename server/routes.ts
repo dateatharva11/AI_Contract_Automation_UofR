@@ -105,9 +105,45 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.put(api.contracts.update.path, async (req, res) => {
     try {
       const input = api.contracts.update.input.parse(req.body);
-      const contract = await storage.updateContract(Number(req.params.id), input);
+      const contractId = Number(req.params.id);
+      const oldContract = await storage.getContract(contractId);
+      const contract = await storage.updateContract(contractId, input);
       if (!contract) return res.status(404).json({ message: 'Contract not found' });
-      await storage.createAuditLog({ contractId: contract.id, userId: 1, action: 'updated', details: 'Contract updated' });
+      
+      await storage.createAuditLog({ contractId: contract.id, userId: 1, action: 'updated', details: `Contract status changed to ${contract.status}` });
+
+      // Handle Notifications on status change
+      if (input.status && input.status !== oldContract?.status) {
+        if (input.status === 'in_review') {
+          // Notify Reviewers
+          const allUsers = await storage.getUsers();
+          const reviewers = allUsers.filter(u => u.role === 'reviewer');
+          for (const reviewer of reviewers) {
+            await storage.createNotification({
+              userId: reviewer.id,
+              contractId: contract.id,
+              type: 'approval_request',
+              message: `New contract "${contract.projectName}" is ready for your review.`,
+              read: false
+            });
+          }
+        } else if (input.status === 'approved') {
+          // Notify Vendor
+          const allUsers = await storage.getUsers();
+          // In this mock, we assume vendor1 is the target. In real app, match vendorId.
+          const vendorUser = allUsers.find(u => u.role === 'vendor');
+          if (vendorUser) {
+            await storage.createNotification({
+              userId: vendorUser.id,
+              contractId: contract.id,
+              type: 'signing_request',
+              message: `Contract "${contract.projectName}" has been approved and is ready for your signature.`,
+              read: false
+            });
+          }
+        }
+      }
+
       res.json(contract);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -197,6 +233,21 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }
       throw err;
     }
+  });
+
+  // Notifications
+  app.get(api.notifications.list.path, async (req, res) => {
+    // In a real app, we'd get userId from session. Here we use a mock based on role.
+    // This is just for demonstration.
+    const allUsers = await storage.getUsers();
+    // Use the first user found for simplicity in this mock
+    const notifications = await storage.getNotifications(1); 
+    res.json(notifications);
+  });
+
+  app.post(api.notifications.markRead.path, async (req, res) => {
+    await storage.markNotificationRead(Number(req.params.id));
+    res.json({ success: true });
   });
 
   return httpServer;

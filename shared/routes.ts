@@ -80,6 +80,18 @@ export const api = {
       responses: { 200: z.array(z.custom<typeof users.$inferSelect>()) },
     }
   },
+  notifications: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/notifications' as const,
+      responses: { 200: z.array(z.custom<typeof notifications.$inferSelect>()) },
+    },
+    markRead: {
+      method: 'POST' as const,
+      path: '/api/notifications/:id/read' as const,
+      responses: { 200: z.object({ success: z.boolean() }) },
+    }
+  },
   sections: {
     list: {
       method: 'GET' as const,

@@ -1,11 +1,11 @@
 import { db } from "./db";
 import {
-  users, vendors, contracts, contractSections, auditLogs,
-  type InsertUser, type InsertVendor, type InsertContract, type InsertContractSection,
-  type User, type Vendor, type Contract, type ContractSection, type AuditLog,
+  users, vendors, contracts, contractSections, auditLogs, notifications,
+  type InsertUser, type InsertVendor, type InsertContract, type InsertContractSection, type InsertNotification,
+  type User, type Vendor, type Contract, type ContractSection, type AuditLog, type Notification,
   type UpdateContractRequest, type UpdateVendorRequest, type UpdateSectionRequest
 } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -33,6 +33,11 @@ export interface IStorage {
   // Audit Logs
   getAuditLogsByContract(contractId: number): Promise<AuditLog[]>;
   createAuditLog(log: { contractId: number, userId: number, action: string, details?: string }): Promise<AuditLog>;
+
+  // Notifications
+  getNotifications(userId: number): Promise<Notification[]>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationRead(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -103,6 +108,18 @@ export class DatabaseStorage implements IStorage {
   async createAuditLog(log: { contractId: number, userId: number, action: string, details?: string }): Promise<AuditLog> {
     const [newLog] = await db.insert(auditLogs).values(log).returning();
     return newLog;
+  }
+
+  // Notifications
+  async getNotifications(userId: number): Promise<Notification[]> {
+    return await db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt));
+  }
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [newNotification] = await db.insert(notifications).values(notification).returning();
+    return newNotification;
+  }
+  async markNotificationRead(id: number): Promise<void> {
+    await db.update(notifications).set({ read: true }).where(eq(notifications.id, id));
   }
 }
 

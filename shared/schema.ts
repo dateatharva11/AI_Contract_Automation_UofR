@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, numeric, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, numeric, jsonb, boolean } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -40,6 +40,17 @@ export const contracts = pgTable("contracts", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// --- Notifications ---
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  contractId: integer("contract_id").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull(), // 'approval_request', 'signing_request', 'status_update'
+  read: boolean("read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const contractSections = pgTable("contract_sections", {
   id: serial("id").primaryKey(),
   contractId: integer("contract_id").notNull(),
@@ -65,6 +76,7 @@ export const insertVendorSchema = createInsertSchema(vendors).omit({ id: true })
 export const insertContractSchema = createInsertSchema(contracts).omit({ id: true, createdAt: true, aiAnalysis: true, checklist: true, status: true, documentContent: true });
 export const insertContractSectionSchema = createInsertSchema(contractSections).omit({ id: true });
 export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: true, createdAt: true });
+export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
 
 // --- Explicit API Contract Types ---
 export type User = typeof users.$inferSelect;
@@ -72,11 +84,13 @@ export type Vendor = typeof vendors.$inferSelect;
 export type Contract = typeof contracts.$inferSelect;
 export type ContractSection = typeof contractSections.$inferSelect;
 export type AuditLog = typeof auditLogs.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertVendor = z.infer<typeof insertVendorSchema>;
 export type InsertContract = z.infer<typeof insertContractSchema>;
 export type InsertContractSection = z.infer<typeof insertContractSectionSchema>;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 export type CreateContractRequest = InsertContract;
 export type UpdateContractRequest = Partial<InsertContract> & { status?: string, documentContent?: string, aiAnalysis?: any, checklist?: any };

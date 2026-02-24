@@ -44,7 +44,16 @@ export default function ContractWorkspace() {
   };
 
   const handleStatusChange = (newStatus: string) => {
-    updateContract({ id: contractId, status: newStatus });
+    updateContract({ id: contractId, status: newStatus }, {
+      onSuccess: () => {
+        const messages: Record<string, string> = {
+          'in_review': "Contract submitted for review. Reviewers have been notified.",
+          'approved': "Contract approved. Vendor has been notified for signature.",
+          'signed': "Contract signed successfully."
+        };
+        toast({ title: messages[newStatus] || "Status updated" });
+      }
+    });
   };
 
   // Mock parsed AI Data
