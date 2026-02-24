@@ -1,38 +1,109 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import { db } from "./db";
+import {
+  users, vendors, contracts, contractSections, auditLogs,
+  type InsertUser, type InsertVendor, type InsertContract, type InsertContractSection,
+  type User, type Vendor, type Contract, type ContractSection, type AuditLog,
+  type UpdateContractRequest, type UpdateVendorRequest, type UpdateSectionRequest
+} from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  // Users
+  getUser(id: number): Promise<User | undefined>;
+  getUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
+
+  // Vendors
+  getVendor(id: number): Promise<Vendor | undefined>;
+  getVendors(): Promise<Vendor[]>;
+  createVendor(vendor: InsertVendor): Promise<Vendor>;
+  updateVendor(id: number, vendor: UpdateVendorRequest): Promise<Vendor>;
+
+  // Contracts
+  getContract(id: number): Promise<Contract | undefined>;
+  getContracts(): Promise<Contract[]>;
+  createContract(contract: InsertContract): Promise<Contract>;
+  updateContract(id: number, updates: UpdateContractRequest): Promise<Contract>;
+
+  // Sections
+  getSectionsByContract(contractId: number): Promise<ContractSection[]>;
+  updateSection(id: number, updates: UpdateSectionRequest): Promise<ContractSection>;
+  createSection(section: InsertContractSection): Promise<ContractSection>;
+
+  // Audit Logs
+  getAuditLogsByContract(contractId: number): Promise<AuditLog[]>;
+  createAuditLog(log: { contractId: number, userId: number, action: string, details?: string }): Promise<AuditLog>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
-  }
-
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+export class DatabaseStorage implements IStorage {
+  // Users
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+  async createUser(user: InsertUser): Promise<User> {
+    const [newUser] = await db.insert(users).values(user).returning();
+    return newUser;
+  }
+
+  // Vendors
+  async getVendor(id: number): Promise<Vendor | undefined> {
+    const [vendor] = await db.select().from(vendors).where(eq(vendors.id, id));
+    return vendor;
+  }
+  async getVendors(): Promise<Vendor[]> {
+    return await db.select().from(vendors);
+  }
+  async createVendor(vendor: InsertVendor): Promise<Vendor> {
+    const [newVendor] = await db.insert(vendors).values(vendor).returning();
+    return newVendor;
+  }
+  async updateVendor(id: number, updates: UpdateVendorRequest): Promise<Vendor> {
+    const [updated] = await db.update(vendors).set(updates).where(eq(vendors.id, id)).returning();
+    return updated;
+  }
+
+  // Contracts
+  async getContract(id: number): Promise<Contract | undefined> {
+    const [contract] = await db.select().from(contracts).where(eq(contracts.id, id));
+    return contract;
+  }
+  async getContracts(): Promise<Contract[]> {
+    return await db.select().from(contracts);
+  }
+  async createContract(contract: InsertContract): Promise<Contract> {
+    const [newContract] = await db.insert(contracts).values(contract).returning();
+    return newContract;
+  }
+  async updateContract(id: number, updates: UpdateContractRequest): Promise<Contract> {
+    const [updated] = await db.update(contracts).set(updates).where(eq(contracts.id, id)).returning();
+    return updated;
+  }
+
+  // Sections
+  async getSectionsByContract(contractId: number): Promise<ContractSection[]> {
+    return await db.select().from(contractSections).where(eq(contractSections.contractId, contractId));
+  }
+  async updateSection(id: number, updates: UpdateSectionRequest): Promise<ContractSection> {
+    const [updated] = await db.update(contractSections).set(updates).where(eq(contractSections.id, id)).returning();
+    return updated;
+  }
+  async createSection(section: InsertContractSection): Promise<ContractSection> {
+    const [newSection] = await db.insert(contractSections).values(section).returning();
+    return newSection;
+  }
+
+  // Audit Logs
+  async getAuditLogsByContract(contractId: number): Promise<AuditLog[]> {
+    return await db.select().from(auditLogs).where(eq(auditLogs.contractId, contractId));
+  }
+  async createAuditLog(log: { contractId: number, userId: number, action: string, details?: string }): Promise<AuditLog> {
+    const [newLog] = await db.insert(auditLogs).values(log).returning();
+    return newLog;
+  }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

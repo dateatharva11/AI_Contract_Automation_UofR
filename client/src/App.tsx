@@ -3,16 +3,28 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "./hooks/use-auth";
+import { Layout } from "./components/layout";
 import NotFound from "@/pages/not-found";
+
+import Dashboard from "./pages/dashboard";
+import ContractsList from "./pages/contracts/index";
+import NewContract from "./pages/contracts/new";
+import ContractWorkspace from "./pages/contracts/[id]";
+import VendorsList from "./pages/vendors/index";
 
 function Router() {
   return (
-    <Switch>
-      {/* Add pages below */}
-      {/* <Route path="/" component={Home}/> */}
-      {/* Fallback to 404 */}
-      <Route component={NotFound} />
-    </Switch>
+    <Layout>
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/contracts" component={ContractsList} />
+        <Route path="/contracts/new" component={NewContract} />
+        <Route path="/contracts/:id" component={ContractWorkspace} />
+        <Route path="/vendors" component={VendorsList} />
+        <Route component={NotFound} />
+      </Switch>
+    </Layout>
   );
 }
 
@@ -20,8 +32,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Router />
+        <AuthProvider>
+          <Toaster />
+          <Router />
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
