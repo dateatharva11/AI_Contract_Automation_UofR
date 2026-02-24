@@ -37,20 +37,20 @@ export function AppSidebar() {
   const { user } = useAuth();
 
   return (
-    <Sidebar variant="inset">
+    <Sidebar variant="inset" className="border-r border-sidebar-border">
       <SidebarHeader className="p-4 flex items-center gap-3 border-b border-sidebar-border">
-        <div className="bg-white text-primary p-2 rounded-lg shadow-sm">
+        <div className="bg-primary text-primary-foreground p-2 rounded-lg shadow-sm">
           <GraduationCap className="w-6 h-6" />
         </div>
-        <div className="flex flex-col">
+        <div className="flex flex-col text-sidebar-foreground">
           <span className="font-display font-bold text-lg leading-tight tracking-tight">University</span>
-          <span className="text-xs text-sidebar-primary/70 font-medium tracking-wide uppercase">Contract Portal</span>
+          <span className="text-xs text-muted-foreground font-medium tracking-wide uppercase">Contract Portal</span>
         </div>
       </SidebarHeader>
       
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-primary/60 mt-4">Main Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-muted-foreground font-semibold mt-4">Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (
@@ -58,7 +58,7 @@ export function AppSidebar() {
                   <SidebarMenuButton 
                     asChild 
                     isActive={location === item.url || (item.url !== "/" && location.startsWith(item.url))}
-                    className="hover-elevate my-1 font-medium"
+                    className="hover-elevate my-1 font-medium transition-colors data-[active=true]:bg-primary data-[active=true]:text-primary-foreground"
                   >
                     <Link href={item.url}>
                       <item.icon className="w-5 h-5" />
