@@ -5,6 +5,7 @@ import { useNotifications, useMarkNotificationRead } from "@/hooks/use-notificat
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import {
   Sidebar,
