@@ -78,7 +78,9 @@ export function AppSidebar() {
           </Avatar>
           <div className="flex flex-col overflow-hidden">
             <span className="text-sm font-semibold truncate">{user.fullName}</span>
-            <span className="text-xs text-sidebar-primary/70 capitalize tracking-wide">{user.role}</span>
+            <span className="text-xs text-sidebar-primary/70 capitalize tracking-wide">
+              {user.role === "contract_manager" ? "Contract Manager" : user.role}
+            </span>
           </div>
         </div>
       </SidebarFooter>
