@@ -45,6 +45,33 @@ async function seedDatabase() {
       baseContent: "This Construction Contract outlines the terms for the following project..."
     });
 
+    const template4 = await storage.createTemplate({
+      name: "Research Grant Agreement",
+      description: "Agreement for university-led research funded by external partners.",
+      defaultProjectName: "Research Project - [Topic]",
+      defaultBudgetAmount: "75000.00",
+      defaultDurationMonths: 12,
+      baseContent: "This Research Grant Agreement establishes the partnership between the University and the Sponsor for..."
+    });
+
+    const template5 = await storage.createTemplate({
+      name: "Non-Disclosure Agreement (NDA)",
+      description: "Confidentiality agreement for preliminary project discussions.",
+      defaultProjectName: "Confidential Disclosure - [Partner]",
+      defaultBudgetAmount: "0.00",
+      defaultDurationMonths: 36,
+      baseContent: "This Non-Disclosure Agreement ensures the protection of proprietary information shared between..."
+    });
+
+    const template6 = await storage.createTemplate({
+      name: "Equipment Lease",
+      description: "Terms for leasing specialized laboratory or IT equipment.",
+      defaultProjectName: "Equipment Lease - [Item]",
+      defaultBudgetAmount: "25000.00",
+      defaultDurationMonths: 6,
+      baseContent: "This Equipment Lease Agreement outlines the terms and conditions for the temporary use of..."
+    });
+
     const vendor = await storage.createVendor({
       name: 'Acme Corp',
       contactEmail: 'contact@acme.com',
