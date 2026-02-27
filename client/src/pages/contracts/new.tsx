@@ -1,20 +1,23 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useCreateContract } from "@/hooks/use-contracts";
 import { useVendors } from "@/hooks/use-vendors";
+import { useTemplates } from "@/hooks/use-templates";
 import { insertContractSchema } from "@shared/schema";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { ArrowLeft, Wand2 } from "lucide-react";
+import { ArrowLeft, Wand2, FileText } from "lucide-react";
+import { addMonths, format } from "date-fns";
 
 // Extend the schema for the form specifically
 const formSchema = insertContractSchema.extend({
+  templateId: z.coerce.number().optional(),
   vendorId: z.coerce.number().min(1, "Vendor is required"),
   budgetAmount: z.coerce.number().min(0, "Budget must be positive").transform(v => String(v)),
   startDate: z.string().min(1, "Start date is required"),
@@ -24,6 +27,7 @@ const formSchema = insertContractSchema.extend({
 export default function NewContract() {
   const [, setLocation] = useLocation();
   const { data: vendors, isLoading: loadingVendors } = useVendors();
+  const { data: templates, isLoading: loadingTemplates } = useTemplates();
   const { mutate: createContract, isPending } = useCreateContract();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -31,12 +35,32 @@ export default function NewContract() {
     defaultValues: {
       projectName: "",
       projectNumber: "",
+      templateId: 0,
       vendorId: 0,
       budgetAmount: "0",
-      startDate: "",
+      startDate: format(new Date(), "yyyy-MM-dd"),
       endDate: "",
     },
   });
+
+  const selectedTemplateId = form.watch("templateId");
+
+  useEffect(() => {
+    if (selectedTemplateId && templates) {
+      const template = templates.find(t => t.id === Number(selectedTemplateId));
+      if (template) {
+        form.setValue("projectName", template.defaultProjectName || "");
+        form.setValue("budgetAmount", String(template.defaultBudgetAmount) || "0");
+        
+        if (template.defaultDurationMonths) {
+          const start = new Date();
+          const end = addMonths(start, template.defaultDurationMonths);
+          form.setValue("startDate", format(start, "yyyy-MM-dd"));
+          form.setValue("endDate", format(end, "yyyy-MM-dd"));
+        }
+      }
+    }
+  }, [selectedTemplateId, templates, form]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     // Ensure dates are parsed properly before sending
@@ -60,7 +84,7 @@ export default function NewContract() {
 
       <div className="mb-6">
         <h1 className="text-3xl font-display font-bold text-foreground">Initiate Contract</h1>
-        <p className="text-muted-foreground mt-1">Enter project details to generate an AI-powered draft.</p>
+        <p className="text-muted-foreground mt-1">Select a template and enter project details.</p>
       </div>
 
       <Card className="glass-panel border-none shadow-xl">
@@ -68,12 +92,41 @@ export default function NewContract() {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardHeader className="bg-primary/5 border-b border-border/50 pb-6">
               <CardTitle className="text-xl text-primary font-display flex items-center">
-                Project Information
+                <FileText className="w-5 h-5 mr-2" />
+                Contract Blueprint
               </CardTitle>
-              <CardDescription>This data will be used to auto-populate the contract template.</CardDescription>
+              <CardDescription>Choose a template to auto-populate fields.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="templateId"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel className="font-semibold text-foreground">Contract Template</FormLabel>
+                      <Select disabled={loadingTemplates} onValueChange={(val) => field.onChange(Number(val))} defaultValue={field.value ? String(field.value) : undefined}>
+                        <FormControl>
+                          <SelectTrigger className="rounded-xl bg-background border-border focus:ring-primary/20">
+                            <SelectValue placeholder="Choose a contract template" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {templates?.map(t => (
+                            <SelectItem key={t.id} value={String(t.id)}>
+                              <div>
+                                <div className="font-medium">{t.name}</div>
+                                <div className="text-xs text-muted-foreground">{t.description}</div>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="projectName"

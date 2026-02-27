@@ -13,10 +13,38 @@ const openai = new OpenAI({
 async function seedDatabase() {
   const users = await storage.getUsers();
   if (users.length === 0) {
-    const admin = await storage.createUser({ username: 'admin1', password: 'password', role: 'admin', fullName: 'Alice Admin', email: 'alice@uni.edu' });
+    const admin = await storage.createUser({ username: 'admin1', password: 'password', role: 'contract_manager', fullName: 'Alice Admin', email: 'alice@uni.edu' });
     const reviewer = await storage.createUser({ username: 'reviewer1', password: 'password', role: 'reviewer', fullName: 'Bob Reviewer', email: 'bob@uni.edu' });
     const vendorUser = await storage.createUser({ username: 'vendor1', password: 'password', role: 'vendor', fullName: 'Charlie Vendor', email: 'charlie@vendor.com' });
     
+    // Seed Templates
+    const template1 = await storage.createTemplate({
+      name: "Service Agreement",
+      description: "Standard agreement for general professional services.",
+      defaultProjectName: "Professional Services - [Project Name]",
+      defaultBudgetAmount: "50000.00",
+      defaultDurationMonths: 12,
+      baseContent: "This Service Agreement is made between the University and the Service Provider..."
+    });
+
+    const template2 = await storage.createTemplate({
+      name: "Software License",
+      description: "Agreement for software licensing and maintenance.",
+      defaultProjectName: "Software Implementation - [Product]",
+      defaultBudgetAmount: "100000.00",
+      defaultDurationMonths: 24,
+      baseContent: "This Software License Agreement governs the use of software provided by..."
+    });
+
+    const template3 = await storage.createTemplate({
+      name: "Construction Contract",
+      description: "For major infrastructure and renovation projects.",
+      defaultProjectName: "Campus Renovation - [Building]",
+      defaultBudgetAmount: "500000.00",
+      defaultDurationMonths: 18,
+      baseContent: "This Construction Contract outlines the terms for the following project..."
+    });
+
     const vendor = await storage.createVendor({
       name: 'Acme Corp',
       contactEmail: 'contact@acme.com',
@@ -130,7 +158,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         } else if (input.status === 'approved') {
           // Notify Vendor
           const allUsers = await storage.getUsers();
-          // In this mock, we assume vendor1 is the target. In real app, match vendorId.
           const vendorUser = allUsers.find(u => u.role === 'vendor');
           if (vendorUser) {
             await storage.createNotification({
@@ -138,6 +165,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
               contractId: contract.id,
               type: 'signing_request',
               message: `Contract "${contract.projectName}" has been approved and is ready for your signature.`,
+              read: false
+            });
+          }
+        } else if (input.status === 'signed') {
+          // Notify Contract Manager
+          const allUsers = await storage.getUsers();
+          const managers = allUsers.filter(u => u.role === 'contract_manager');
+          for (const manager of managers) {
+            await storage.createNotification({
+              userId: manager.id,
+              contractId: contract.id,
+              type: 'status_update',
+              message: `Contract "${contract.projectName}" has been signed by the vendor.`,
               read: false
             });
           }
@@ -248,6 +288,18 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.post(api.notifications.markRead.path, async (req, res) => {
     await storage.markNotificationRead(Number(req.params.id));
     res.json({ success: true });
+  });
+
+  // Templates
+  app.get(api.templates.list.path, async (req, res) => {
+    const templates = await storage.getTemplates();
+    res.json(templates);
+  });
+
+  app.get(api.templates.get.path, async (req, res) => {
+    const template = await storage.getTemplate(Number(req.params.id));
+    if (!template) return res.status(404).json({ message: 'Template not found' });
+    res.json(template);
   });
 
   return httpServer;

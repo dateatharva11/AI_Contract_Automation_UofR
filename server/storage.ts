@@ -1,8 +1,8 @@
 import { db } from "./db";
 import {
-  users, vendors, contracts, contractSections, auditLogs, notifications,
-  type InsertUser, type InsertVendor, type InsertContract, type InsertContractSection, type InsertNotification,
-  type User, type Vendor, type Contract, type ContractSection, type AuditLog, type Notification,
+  users, vendors, contracts, contractSections, auditLogs, notifications, contractTemplates,
+  type InsertUser, type InsertVendor, type InsertContract, type InsertContractSection, type InsertNotification, type InsertContractTemplate,
+  type User, type Vendor, type Contract, type ContractSection, type AuditLog, type Notification, type ContractTemplate,
   type UpdateContractRequest, type UpdateVendorRequest, type UpdateSectionRequest
 } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
@@ -18,6 +18,11 @@ export interface IStorage {
   getVendors(): Promise<Vendor[]>;
   createVendor(vendor: InsertVendor): Promise<Vendor>;
   updateVendor(id: number, vendor: UpdateVendorRequest): Promise<Vendor>;
+
+  // Templates
+  getTemplates(): Promise<ContractTemplate[]>;
+  getTemplate(id: number): Promise<ContractTemplate | undefined>;
+  createTemplate(template: InsertContractTemplate): Promise<ContractTemplate>;
 
   // Contracts
   getContract(id: number): Promise<Contract | undefined>;
@@ -69,6 +74,19 @@ export class DatabaseStorage implements IStorage {
   async updateVendor(id: number, updates: UpdateVendorRequest): Promise<Vendor> {
     const [updated] = await db.update(vendors).set(updates).where(eq(vendors.id, id)).returning();
     return updated;
+  }
+
+  // Templates
+  async getTemplates(): Promise<ContractTemplate[]> {
+    return await db.select().from(contractTemplates);
+  }
+  async getTemplate(id: number): Promise<ContractTemplate | undefined> {
+    const [template] = await db.select().from(contractTemplates).where(eq(contractTemplates.id, id));
+    return template;
+  }
+  async createTemplate(template: InsertContractTemplate): Promise<ContractTemplate> {
+    const [newTemplate] = await db.insert(contractTemplates).values(template).returning();
+    return newTemplate;
   }
 
   // Contracts

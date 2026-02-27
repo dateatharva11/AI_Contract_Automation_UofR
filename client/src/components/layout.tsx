@@ -170,11 +170,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground font-medium hidden sm:block">Viewing as:</span>
                 <Select value={user.role} onValueChange={(v) => setRole(v as Role)}>
-                  <SelectTrigger className="w-[140px] h-9">
+                  <SelectTrigger className="w-[160px] h-9">
                     <SelectValue placeholder="Select Role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Administrator</SelectItem>
+                    <SelectItem value="contract_manager">Contract Manager</SelectItem>
                     <SelectItem value="reviewer">Reviewer</SelectItem>
                     <SelectItem value="vendor">Vendor</SelectItem>
                   </SelectContent>

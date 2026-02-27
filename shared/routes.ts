@@ -80,6 +80,18 @@ export const api = {
       responses: { 200: z.array(z.custom<typeof users.$inferSelect>()) },
     }
   },
+  templates: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/templates' as const,
+      responses: { 200: z.array(z.custom<typeof contractTemplates.$inferSelect>()) },
+    },
+    get: {
+      method: 'GET' as const,
+      path: '/api/templates/:id' as const,
+      responses: { 200: z.custom<typeof contractTemplates.$inferSelect>(), 404: errorSchemas.notFound },
+    }
+  },
   notifications: {
     list: {
       method: 'GET' as const,

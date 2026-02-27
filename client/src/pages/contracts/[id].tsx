@@ -73,7 +73,7 @@ export default function ContractWorkspace() {
         </div>
         
         <div className="flex items-center gap-2 flex-wrap">
-          {user.role === 'admin' && contract.status === 'draft' && (
+          {user.role === 'contract_manager' && contract.status === 'draft' && (
             <Button 
               variant="outline" 
               className="hover-elevate bg-background"
