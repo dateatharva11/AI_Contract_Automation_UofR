@@ -19,30 +19,30 @@ async function seedDatabase() {
     
     // Seed Templates
     const template1 = await storage.createTemplate({
-      name: "Service Agreement",
-      description: "Standard agreement for general professional services.",
-      defaultProjectName: "Professional Services - [Project Name]",
-      defaultBudgetAmount: "50000.00",
-      defaultDurationMonths: 12,
-      baseContent: "This Service Agreement is made between the University and the Service Provider..."
+      name: "University New Academic Building Contract",
+      description: "Standard agreement for the construction of new academic facilities.",
+      defaultProjectName: "New Academic Building - [Name]",
+      defaultBudgetAmount: "5000000.00",
+      defaultDurationMonths: 24,
+      baseContent: "This Agreement is made for the construction of a new academic building..."
     });
 
     const template2 = await storage.createTemplate({
-      name: "Software License",
-      description: "Agreement for software licensing and maintenance.",
-      defaultProjectName: "Software Implementation - [Product]",
-      defaultBudgetAmount: "100000.00",
-      defaultDurationMonths: 24,
-      baseContent: "This Software License Agreement governs the use of software provided by..."
+      name: "University Renovation Contract",
+      description: "Agreement for interior and exterior renovation of existing university structures.",
+      defaultProjectName: "Campus Renovation - [Building]",
+      defaultBudgetAmount: "250000.00",
+      defaultDurationMonths: 12,
+      baseContent: "This Renovation Contract outlines the scope of work for restoring..."
     });
 
     const template3 = await storage.createTemplate({
-      name: "Construction Contract",
-      description: "For major infrastructure and renovation projects.",
-      defaultProjectName: "Campus Renovation - [Building]",
-      defaultBudgetAmount: "500000.00",
+      name: "Design-Build Agreement (University)",
+      description: "Comprehensive agreement where design and construction are handled by a single entity.",
+      defaultProjectName: "Design-Build Project - [Project]",
+      defaultBudgetAmount: "1500000.00",
       defaultDurationMonths: 18,
-      baseContent: "This Construction Contract outlines the terms for the following project..."
+      baseContent: "This Design-Build Agreement integrates architectural design and construction services..."
     });
 
     const template4 = await storage.createTemplate({

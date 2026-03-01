@@ -10,6 +10,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "./pages/dashboard";
 import ContractsList from "./pages/contracts/index";
 import NewContract from "./pages/contracts/new";
+import SelectTemplate from "./pages/contracts/select-template";
 import ContractWorkspace from "./pages/contracts/[id]";
 import VendorsList from "./pages/vendors/index";
 
@@ -19,6 +20,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/contracts" component={ContractsList} />
+        <Route path="/contracts/select-template" component={SelectTemplate} />
         <Route path="/contracts/new" component={NewContract} />
         <Route path="/contracts/:id" component={ContractWorkspace} />
         <Route path="/vendors" component={VendorsList} />

@@ -25,17 +25,21 @@ const formSchema = insertContractSchema.extend({
 });
 
 export default function NewContract() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { data: vendors, isLoading: loadingVendors } = useVendors();
   const { data: templates, isLoading: loadingTemplates } = useTemplates();
   const { mutate: createContract, isPending } = useCreateContract();
+
+  // Get templateId from query string
+  const searchParams = new URLSearchParams(window.location.search);
+  const templateIdFromUrl = searchParams.get("templateId");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       projectName: "",
       projectNumber: "",
-      templateId: 0,
+      templateId: templateIdFromUrl ? Number(templateIdFromUrl) : 0,
       vendorId: 0,
       budgetAmount: "0",
       startDate: format(new Date(), "yyyy-MM-dd"),
@@ -77,9 +81,9 @@ export default function NewContract() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500">
-      <Button variant="ghost" className="mb-2 hover-elevate text-muted-foreground hover:text-foreground" onClick={() => setLocation("/contracts")}>
+      <Button variant="ghost" className="mb-2 hover-elevate text-muted-foreground hover:text-foreground" onClick={() => setLocation("/contracts/select-template")}>
         <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Contracts
+        Back to Template Selection
       </Button>
 
       <div className="mb-6">
@@ -95,38 +99,10 @@ export default function NewContract() {
                 <FileText className="w-5 h-5 mr-2" />
                 Contract Blueprint
               </CardTitle>
-              <CardDescription>Choose a template to auto-populate fields.</CardDescription>
+              <CardDescription>Enter project details to generate an AI-powered draft based on your selected template.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="templateId"
-                  render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                      <FormLabel className="font-semibold text-foreground">Contract Template</FormLabel>
-                      <Select disabled={loadingTemplates} onValueChange={(val) => field.onChange(Number(val))} defaultValue={field.value ? String(field.value) : undefined}>
-                        <FormControl>
-                          <SelectTrigger className="rounded-xl bg-background border-border focus:ring-primary/20">
-                            <SelectValue placeholder="Choose a contract template" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {templates?.map(t => (
-                            <SelectItem key={t.id} value={String(t.id)}>
-                              <div>
-                                <div className="font-medium">{t.name}</div>
-                                <div className="text-xs text-muted-foreground">{t.description}</div>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 <FormField
                   control={form.control}
                   name="projectName"
