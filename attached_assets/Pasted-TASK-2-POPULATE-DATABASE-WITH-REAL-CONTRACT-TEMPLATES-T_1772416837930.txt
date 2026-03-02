@@ -1,0 +1,209 @@
+TASK 2: POPULATE DATABASE WITH REAL CONTRACT TEMPLATES
+The template selection UI exists but lacks underlying data. Please seed the database with these three complete templates:
+
+TEMPLATE 1: University New Academic Building Contract
+Template Details:
+
+json
+{
+  "name": "University New Academic Building Contract",
+  "description": "Standard AIA-based contract for new academic construction projects including classrooms, labs, and faculty offices",
+  "template_type": "new_construction",
+  "default_budget_min": 5000000,
+  "default_budget_max": 50000000,
+  "default_timeline_min_months": 18,
+  "default_timeline_max_months": 36,
+  "standard_clauses": [
+    {
+      "title": "AIA A101-2017 - Standard Form of Agreement",
+      "content": "This Agreement is made on [DATE] between [UNIVERSITY NAME] (the 'Owner') and [CONTRACTOR NAME] (the 'Contractor') for construction of [PROJECT NAME] located at [PROJECT ADDRESS]...",
+      "clause_type": "core_agreement"
+    },
+    {
+      "title": "AIA A201-2017 - General Conditions",
+      "content": "The General Conditions of the Contract for Construction, AIA Document A201-2017, are hereby incorporated by reference as if fully set forth herein...",
+      "clause_type": "general_conditions"
+    },
+    {
+      "title": "LEED Certification Requirement",
+      "content": "Contractor shall design and construct the Project to achieve a minimum LEED Silver certification as defined by the U.S. Green Building Council. All costs associated with certification shall be included in the Contract Sum...",
+      "clause_type": "special_requirement"
+    },
+    {
+      "title": "State Higher Education Compliance",
+      "content": "All work shall comply with [STATE] Higher Education Facilities Regulations, including but not limited to accessibility standards, fire safety codes, and reporting requirements to the Department of Education...",
+      "clause_type": "compliance"
+    }
+  ],
+  "required_review_sections": [
+    "Architecture Review",
+    "Engineering Review",
+    "Sustainability Review",
+    "Accessibility Compliance",
+    "IT Infrastructure Review",
+    "Facilities Management Review"
+  ],
+  "prefill_rules": {
+    "project_type": "Academic Building",
+    "requires_insurance_certificate": true,
+    "requires_performance_bond": true,
+    "special_requirements": [
+      "LEED Silver minimum",
+      "State education regulations compliance",
+      "Separate bidding for FF&E"
+    ]
+  }
+}
+TEMPLATE 2: University Renovation Contract
+Template Details:
+
+json
+{
+  "name": "University Renovation Contract",
+  "description": "Contract for renovation, rehabilitation, and improvement projects in existing university buildings",
+  "template_type": "renovation",
+  "default_budget_min": 500000,
+  "default_budget_max": 5000000,
+  "default_timeline_min_months": 3,
+  "default_timeline_max_months": 12,
+  "standard_clauses": [
+    {
+      "title": "AIA A103-2017 - Cost Plus Agreement",
+      "content": "The Contract Sum is the Cost of the Work as defined in the General Conditions plus the Contractor's Fee. The Contractor's Fee shall be [FEE_PERCENTAGE]% of the Cost of the Work...",
+      "clause_type": "core_agreement"
+    },
+    {
+      "title": "Modified General Conditions for Occupied Buildings",
+      "content": "Contractor acknowledges that portions of the building may remain occupied during construction. Work in occupied areas shall be performed outside normal business hours (after 6 PM weekdays and weekends) unless otherwise approved in writing by Owner. Contractor shall implement dust control measures, maintain egress paths, and provide temporary barriers...",
+      "clause_type": "special_condition"
+    },
+    {
+      "title": "Hazardous Materials Protocol",
+      "content": "Prior to commencing any demolition or renovation work, Contractor shall review the Owner-provided Asbestos Inspection Report. Should suspect materials be encountered, work shall cease immediately and Owner notified within 2 hours...",
+      "clause_type": "safety_requirement"
+    }
+  ],
+  "required_review_sections": [
+    "Facilities Management",
+    "Environmental Health & Safety",
+    "Building Code Compliance",
+    "Accessibility Review",
+    "Historic Preservation (if applicable)"
+  ],
+  "prefill_rules": {
+    "project_type": "Renovation",
+    "requires_asbestos_inspection": true,
+    "requires_swing_space_plan": true,
+    "special_requirements": [
+      "After-hours work restrictions",
+      "Occupied building protocols",
+      "Phasing plan required"
+    ]
+  }
+}
+TEMPLATE 3: Design-Build Agreement (University)
+Template Details:
+
+json
+{
+  "name": "Design-Build Agreement (University)",
+  "description": "Integrated design-build contract combining architectural design and construction services",
+  "template_type": "design_build",
+  "default_budget_min": 2000000,
+  "default_budget_max": 20000000,
+  "default_timeline_min_months": 12,
+  "default_timeline_max_months": 24,
+  "standard_clauses": [
+    {
+      "title": "AIA A141-2014 - Design-Build Agreement",
+      "content": "This Agreement is between [UNIVERSITY NAME] (the 'Owner') and [DESIGN-BUILDER NAME] (the 'Design-Builder') for the design and construction of [PROJECT NAME]. The Design-Builder shall provide all design services and construction necessary to complete the Project in accordance with the Owner's Criteria...",
+      "clause_type": "core_agreement"
+    },
+    {
+      "title": "AIA A142-2014 - Design-Builder's Contract",
+      "content": "The Design-Builder shall provide architectural, engineering, and other design services through its design team, and construction services through its construction team. The Design-Builder bears sole responsibility for coordination between design and construction phases...",
+      "clause_type": "subcontractor_agreement"
+    },
+    {
+      "title": "Integrated Project Delivery Approach",
+      "content": "Parties agree to utilize integrated project delivery methods including colocation of key team members, shared risk/reward pools, and building information modeling (BIM) coordination throughout design and construction...",
+      "clause_type": "methodology"
+    },
+    {
+      "title": "Early Contractor Involvement",
+      "content": "The Design-Builder shall engage key trade contractors during design development to provide constructability review, cost estimating, and value engineering recommendations prior to final design completion...",
+      "clause_type": "process_requirement"
+    }
+  ],
+  "required_review_sections": [
+    "Design Team Review",
+    "Construction Team Review",
+    "Owner's Representative",
+    "Legal Counsel",
+    "Risk Management",
+    "Budget Office"
+  ],
+  "prefill_rules": {
+    "project_type": "Design-Build",
+    "requires_bim_execution_plan": true,
+    "requires_target_value_delivery": true,
+    "special_requirements": [
+      "Integrated project delivery",
+      "Early trade contractor involvement",
+      "Shared savings incentive structure"
+    ]
+  }
+}
+ADD SAMPLE VENDOR DATA
+Also populate the vendor database with at least these 3 sample vendors:
+
+Vendor 1:
+
+Name: "Turner Construction Company"
+
+Contact: "Sarah Johnson, sarah.johnson@turner.com, 212-555-0123"
+
+Past Contracts: "University Science Center (2019), Student Housing Phase II (2021)"
+
+Insurance Certificate: "General Liability $5M, Workers Comp, Auto Liability"
+
+Negotiated Rates: "Standard GMP fee 3.5%"
+
+Vendor 2:
+
+Name: "Gilbane Building Company"
+
+Contact: "Michael Chen, mchen@gilbane.com, 401-555-0456"
+
+Past Contracts: "Business School Renovation (2020), Parking Structure (2022)"
+
+Insurance Certificate: "General Liability $10M, Umbrella $10M"
+
+Negotiated Rates: "Standard GMP fee 3.25% with incentive"
+
+Vendor 3:
+
+Name: "Whiting-Turner Contracting"
+
+Contact: "David Rodriguez, drodriguez@whiting-turner.com, 410-555-0789"
+
+Past Contracts: "Engineering Building (2021), Library Renovation (2023)"
+
+Insurance Certificate: "General Liability $7.5M, Professional Liability $3M"
+
+Negotiated Rates: "Standard GMP fee 3.75%"
+
+IMPLEMENTATION CHECKLIST
+Please verify:
+
+"Initiate Contract" now goes to template selection (Task 1)
+
+Database seeded with all 3 templates including full clauses (Task 2)
+
+Selecting a template pre-fills the form with template defaults
+
+Vendor dropdown populated with sample vendors
+
+"View Sample" button shows template preview
+
+Final contract generation includes template clauses

@@ -51,18 +51,23 @@ export default function SelectTemplate() {
               </div>
               <CardTitle className="text-xl font-display mt-4 group-hover:text-primary transition-colors">{template.name}</CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
-              <CardDescription className="text-sm leading-relaxed min-h-[3rem]">
-                {template.description}
-              </CardDescription>
-              <div className="mt-6 flex flex-wrap gap-2">
-                <span className="text-[10px] uppercase tracking-wider font-bold bg-muted px-2 py-1 rounded">
-                  {template.defaultDurationMonths} Months
-                </span>
-                <span className="text-[10px] uppercase tracking-wider font-bold bg-muted px-2 py-1 rounded">
-                  Standard Terms
-                </span>
+            <CardContent className="pt-4 flex-1 flex flex-col justify-between">
+              <div>
+                <CardDescription className="text-sm leading-relaxed min-h-[3rem]">
+                  {template.description}
+                </CardDescription>
+                <div className="mt-6 flex flex-wrap gap-2">
+                  <span className="text-[10px] uppercase tracking-wider font-bold bg-muted px-2 py-1 rounded">
+                    {template.defaultDurationMonths} Months
+                  </span>
+                  <span className="text-[10px] uppercase tracking-wider font-bold bg-muted px-2 py-1 rounded">
+                    Standard Terms
+                  </span>
+                </div>
               </div>
+              <Button variant="outline" size="sm" className="mt-6 w-full group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
+                View Sample
+              </Button>
             </CardContent>
           </Card>
         ))}
