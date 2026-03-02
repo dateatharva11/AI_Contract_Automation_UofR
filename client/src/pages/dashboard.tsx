@@ -46,7 +46,7 @@ export default function Dashboard() {
           <p className="text-muted-foreground mt-1">Here's what's happening with your contracts today.</p>
         </div>
         <Button asChild className="hover-elevate shadow-md bg-primary hover:bg-primary/90 rounded-full px-6">
-          <Link href="/contracts/select-template">
+          <Link href="/contracts/new">
             <Plus className="w-4 h-4 mr-2" />
             Initiate Contract
           </Link>

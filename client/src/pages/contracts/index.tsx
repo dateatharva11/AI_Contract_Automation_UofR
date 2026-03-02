@@ -61,9 +61,7 @@ export default function ContractsList() {
               </div>
               <h3 className="text-lg font-bold">No contracts found</h3>
               <p className="text-muted-foreground mt-1 mb-4">Get started by creating a new contract.</p>
-              <Button asChild className="rounded-full px-6">
-                <Link href="/contracts/select-template">Initiate Contract</Link>
-              </Button>
+              <Button asChild><Link href="/contracts/select-template">Initiate Contract</Link></Button>
             </div>
           ) : (
             <table className="w-full text-sm text-left">

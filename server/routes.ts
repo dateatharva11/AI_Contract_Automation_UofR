@@ -85,40 +85,9 @@ async function seedDatabase() {
       projectName: 'Campus Wifi Upgrade',
       projectNumber: 'IT-2025-01',
       vendorId: vendor.id,
-      templateId: 4, // Service Agreement
       startDate: new Date('2025-06-01'),
       endDate: new Date('2025-12-31'),
       budgetAmount: "250000.00"
-    });
-
-    await storage.createContract({
-      projectName: 'New Science Wing Construction',
-      projectNumber: 'CON-2026-04',
-      vendorId: vendor.id,
-      templateId: 1, // University New Academic Building Contract
-      startDate: new Date('2026-01-01'),
-      endDate: new Date('2027-12-31'),
-      budgetAmount: "5000000.00"
-    });
-
-    await storage.createContract({
-      projectName: 'Library Modernization',
-      projectNumber: 'REN-2026-12',
-      vendorId: vendor.id,
-      templateId: 2, // University Renovation Contract
-      startDate: new Date('2026-03-01'),
-      endDate: new Date('2027-02-28'),
-      budgetAmount: "250000.00"
-    });
-
-    await storage.createContract({
-      projectName: 'Student Union Hub Design',
-      projectNumber: 'DB-2026-08',
-      vendorId: vendor.id,
-      templateId: 3, // Design-Build Agreement (University)
-      startDate: new Date('2026-05-01'),
-      endDate: new Date('2027-10-31'),
-      budgetAmount: "1500000.00"
     });
 
     await storage.updateContract(contract.id, {
