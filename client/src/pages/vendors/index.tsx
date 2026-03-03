@@ -12,6 +12,7 @@ import { z } from "zod";
 import { Search, Plus, Building2, Phone, Mail, MapPin } from "lucide-react";
 
 export default function VendorsList() {
+  const { user } = useAuth();
   const { data: vendors, isLoading } = useVendors();
   const { mutate: createVendor, isPending } = useCreateVendor();
   const [search, setSearch] = useState("");
@@ -51,57 +52,59 @@ export default function VendorsList() {
           <p className="text-muted-foreground mt-1">Manage approved university contractors and vendors.</p>
         </div>
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="hover-elevate shadow-md bg-primary hover:bg-primary/90 rounded-full px-6">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Vendor
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle className="font-display text-2xl">Add New Vendor</DialogTitle>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-                <FormField control={form.control} name="name" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Company Name</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}/>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField control={form.control} name="contactEmail" render={({ field }) => (
+        {user.role === 'contract_manager' && (
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="hover-elevate shadow-md bg-primary hover:bg-primary/90 rounded-full px-6">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Vendor
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle className="font-display text-2xl">Add New Vendor</DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+                  <FormField control={form.control} name="name" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl><Input type="email" {...field} /></FormControl>
+                      <FormLabel>Company Name</FormLabel>
+                      <FormControl><Input {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}/>
-                  <FormField control={form.control} name="phone" render={({ field }) => (
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="contactEmail" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl><Input type="email" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}/>
+                    <FormField control={form.control} name="phone" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone</FormLabel>
+                        <FormControl><Input {...field} value={field.value || ""} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}/>
+                  </div>
+                  <FormField control={form.control} name="address" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone</FormLabel>
+                      <FormLabel>Address</FormLabel>
                       <FormControl><Input {...field} value={field.value || ""} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}/>
-                </div>
-                <FormField control={form.control} name="address" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Address</FormLabel>
-                    <FormControl><Input {...field} value={field.value || ""} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}/>
-                <DialogFooter className="pt-4">
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                  <Button type="submit" disabled={isPending}>{isPending ? "Adding..." : "Add Vendor"}</Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+                  <DialogFooter className="pt-4">
+                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                    <Button type="submit" disabled={isPending}>{isPending ? "Adding..." : "Add Vendor"}</Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <div className="relative max-w-md">

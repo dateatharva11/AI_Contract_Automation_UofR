@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/status-badge";
 import { Search, Plus, FileText, ChevronRight, Filter } from "lucide-react";
 import { format } from "date-fns";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function ContractsList() {
+  const { user } = useAuth();
   const { data: contracts, isLoading: contractsLoading } = useContracts();
   const { data: vendors } = useVendors();
   const [search, setSearch] = useState("");
@@ -26,13 +28,15 @@ export default function ContractsList() {
           <h1 className="text-3xl font-display font-bold text-foreground">Contracts</h1>
           <p className="text-muted-foreground mt-1">Manage and track all university contracts.</p>
         </div>
-        <Button asChild className="hover-elevate shadow-md bg-primary hover:bg-primary/90 rounded-full px-6">
-          <Link href="/contracts/select-template">
-          {/* <Link href="/contracts/new"> */}
-            <Plus className="w-4 h-4 mr-2" />
-            New Contract
-          </Link>
-        </Button>
+        {user.role === 'contract_manager' && (
+          <Button asChild className="hover-elevate shadow-md bg-primary hover:bg-primary/90 rounded-full px-6">
+            <Link href="/contracts/select-template">
+            {/* <Link href="/contracts/new"> */}
+              <Plus className="w-4 h-4 mr-2" />
+              New Contract
+            </Link>
+          </Button>
+        )}
       </div>
 
       <Card className="glass-panel overflow-hidden border-none shadow-lg">

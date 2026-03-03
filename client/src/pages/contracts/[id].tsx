@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { User } from "@shared/schema";
 import { useContract, useUpdateContract, useGenerateDraft, useAnalyzeContract, useAuditLogs } from "@/hooks/use-contracts";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/status-badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Wand2, ShieldAlert, CheckSquare, History, Check, Save } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { Editor } from '@tinymce/tinymce-react';
 
 export default function ContractWorkspace() {
   const { id } = useParams();
@@ -24,6 +26,10 @@ export default function ContractWorkspace() {
   const { data: auditLogs } = useAuditLogs(contractId);
 
   const [localContent, setLocalContent] = useState("");
+  const [selectedReviewerId, setSelectedReviewerId] = useState<string>("");
+
+  const { data: allUsers } = useQuery<User[]>({ queryKey: ["/api/users"] });
+  const reviewers = allUsers?.filter(u => u.role === 'reviewer') || [];
 
   useEffect(() => {
     if (contract?.documentContent && !localContent) {
@@ -74,13 +80,26 @@ export default function ContractWorkspace() {
         
         <div className="flex items-center gap-2 flex-wrap">
           {user.role === 'contract_manager' && contract.status === 'draft' && (
-            <Button 
-              variant="outline" 
-              className="hover-elevate bg-background"
-              onClick={() => handleStatusChange('in_review')}
-            >
-              Submit for Review
-            </Button>
+            <div className="flex items-center gap-2">
+              <select 
+                className="h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                value={selectedReviewerId}
+                onChange={(e) => setSelectedReviewerId(e.target.value)}
+              >
+                <option value="">Select Reviewer</option>
+                {reviewers.map(r => (
+                  <option key={r.id} value={r.id}>{r.fullName}</option>
+                ))}
+              </select>
+              <Button 
+                variant="outline" 
+                className="hover-elevate bg-background"
+                onClick={() => handleStatusChange('in_review')}
+                disabled={!selectedReviewerId}
+              >
+                Submit for Review
+              </Button>
+            </div>
           )}
           {user.role === 'reviewer' && contract.status === 'in_review' && (
             <Button 
@@ -130,14 +149,35 @@ export default function ContractWorkspace() {
               Save
             </Button>
           </div>
-          <div className="flex-1 p-0 relative">
-            <Textarea 
-              value={localContent}
-              onChange={(e) => setLocalContent(e.target.value)}
-              className="w-full h-full p-6 resize-none border-none focus-visible:ring-0 text-base font-serif leading-relaxed bg-background"
-              placeholder={isGenerating ? "Generating contract draft..." : "Document content will appear here..."}
-              disabled={user.role === 'vendor'}
-            />
+          <div className="flex-1 p-0 relative overflow-hidden">
+            {user.role === 'vendor' ? (
+              <div 
+                className="w-full h-full p-6 overflow-auto font-serif leading-relaxed bg-background"
+                dangerouslySetInnerHTML={{ __html: localContent }}
+              />
+            ) : (
+              <Editor
+                apiKey='no-api-key-needed'
+                value={localContent}
+                onEditorChange={(content) => setLocalContent(content)}
+                init={{
+                  height: '100%',
+                  menubar: true,
+                  plugins: [
+                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                  ],
+                  toolbar: 'undo redo | blocks | ' +
+                    'bold italic forecolor | alignleft aligncenter ' +
+                    'alignright alignjustify | bullist numlist outdent indent | ' +
+                    'removeformat | table | help',
+                  content_style: 'body { font-family: serif; font-size: 16px; line-height: 1.6; padding: 1rem; }',
+                  branding: false,
+                  promotion: false
+                }}
+              />
+            )}
           </div>
         </Card>
 

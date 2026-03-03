@@ -7,8 +7,10 @@ import { StatusBadge } from "@/components/status-badge";
 import { FileText, Clock, CheckCircle2, ShieldAlert, Plus, ArrowRight } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const { data: contracts, isLoading } = useContracts();
 
   if (isLoading) {
@@ -45,12 +47,14 @@ export default function Dashboard() {
           <h1 className="text-3xl font-display font-bold text-foreground">Welcome back</h1>
           <p className="text-muted-foreground mt-1">Here's what's happening with your contracts today.</p>
         </div>
-        <Button asChild className="hover-elevate shadow-md bg-primary hover:bg-primary/90 rounded-full px-6">
-          <Link href="/contracts/select-template">
-            <Plus className="w-4 h-4 mr-2" />
-            Initiate Contract
-          </Link>
-        </Button>
+        {user.role === 'contract_manager' && (
+          <Button asChild className="hover-elevate shadow-md bg-primary hover:bg-primary/90 rounded-full px-6">
+            <Link href="/contracts/select-template">
+              <Plus className="w-4 h-4 mr-2" />
+              Initiate Contract
+            </Link>
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

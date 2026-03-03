@@ -410,3 +410,20 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   return httpServer;
 }
+
+// Seed reviewers if they don't exist
+import { storage } from "./storage";
+(async () => {
+  const users = await storage.getUsers();
+  const reviewers = users.filter(u => u.role === 'reviewer');
+  if (reviewers.length === 0) {
+    const sampleReviewers = [
+      { username: "legal_rev", password: "password", role: "reviewer", fullName: "Legal Department", email: "legal@university.edu" },
+      { username: "fac_rev", password: "password", role: "reviewer", fullName: "Facilities Office", email: "facilities@university.edu" },
+      { username: "proc_rev", password: "password", role: "reviewer", fullName: "Procurement Team", email: "procurement@university.edu" }
+    ];
+    for (const r of sampleReviewers) {
+      await storage.createUser(r);
+    }
+  }
+})();
