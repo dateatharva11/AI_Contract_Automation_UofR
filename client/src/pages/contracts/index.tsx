@@ -28,6 +28,7 @@ export default function ContractsList() {
         </div>
         <Button asChild className="hover-elevate shadow-md bg-primary hover:bg-primary/90 rounded-full px-6">
           <Link href="/contracts/select-template">
+          {/* <Link href="/contracts/new"> */}
             <Plus className="w-4 h-4 mr-2" />
             New Contract
           </Link>
@@ -61,10 +62,10 @@ export default function ContractsList() {
               </div>
               <h3 className="text-lg font-bold">No contracts found</h3>
               <p className="text-muted-foreground mt-1 mb-4">Get started by creating a new contract.</p>
-              <Button asChild><Link href="/contracts/select-template">Initiate Contract</Link></Button>
-              {/* <Button asChild className="rounded-full px-6">
+              {/* <Button asChild><Link href="/contracts/new">Initiate Contract</Link></Button> */}
+              <Button asChild className="rounded-full px-6">
                 <Link href="/contracts/select-template">Initiate Contract</Link>
-              </Button> */}
+              </Button>
             </div>
           ) : (
             <table className="w-full text-sm text-left">
