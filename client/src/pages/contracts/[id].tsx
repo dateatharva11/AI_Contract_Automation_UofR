@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { User } from "@shared/schema";
 import { useContract, useUpdateContract, useGenerateDraft, useAnalyzeContract, useAuditLogs } from "@/hooks/use-contracts";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +26,10 @@ export default function ContractWorkspace() {
   const { data: auditLogs } = useAuditLogs(contractId);
 
   const [localContent, setLocalContent] = useState("");
+  const [selectedReviewerId, setSelectedReviewerId] = useState<string>("");
+
+  const { data: allUsers } = useQuery<User[]>({ queryKey: ["/api/users"] });
+  const reviewers = allUsers?.filter(u => u.role === 'reviewer') || [];
 
   useEffect(() => {
     if (contract?.documentContent && !localContent) {
@@ -74,13 +80,26 @@ export default function ContractWorkspace() {
 
         <div className="flex items-center gap-2 flex-wrap">
           {user.role === 'contract_manager' && contract.status === 'draft' && (
-            <Button 
-              variant="outline" 
-              className="hover-elevate bg-background"
-              onClick={() => handleStatusChange('in_review')}
-            >
-              Submit for Review
-            </Button>
+            <div className="flex items-center gap-2">
+              <select 
+                className="h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                value={selectedReviewerId}
+                onChange={(e) => setSelectedReviewerId(e.target.value)}
+              >
+                <option value="">Select Reviewer</option>
+                {reviewers.map(r => (
+                  <option key={r.id} value={r.id}>{r.fullName}</option>
+                ))}
+              </select>
+              <Button 
+                variant="outline" 
+                className="hover-elevate bg-background"
+                onClick={() => handleStatusChange('in_review')}
+                disabled={!selectedReviewerId}
+              >
+                Submit for Review
+              </Button>
+            </div>
           )}
           {user.role === 'reviewer' && contract.status === 'in_review' && (
             <Button 

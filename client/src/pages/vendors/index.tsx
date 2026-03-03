@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useVendors, useCreateVendor } from "@/hooks/use-vendors";
+import { useAuth } from "@/hooks/use-auth"; // This import was missing
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { z } from "zod";
 import { Search, Plus, Building2, Phone, Mail, MapPin } from "lucide-react";
 
 export default function VendorsList() {
-  const { user } = useAuth();
+  const { user } = useAuth(); // Now this will work
   const { data: vendors, isLoading } = useVendors();
   const { mutate: createVendor, isPending } = useCreateVendor();
   const [search, setSearch] = useState("");
@@ -52,7 +53,7 @@ export default function VendorsList() {
           <p className="text-muted-foreground mt-1">Manage approved university contractors and vendors.</p>
         </div>
 
-        {user.role === 'contract_manager' && (
+        {user?.role === 'contract_manager' && ( // Added optional chaining
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button className="hover-elevate shadow-md bg-primary hover:bg-primary/90 rounded-full px-6">
@@ -139,7 +140,7 @@ export default function VendorsList() {
                   <Button variant="ghost" size="sm" className="h-8 text-xs">Edit</Button>
                 </div>
                 <h3 className="text-xl font-display font-bold text-foreground mb-4">{vendor.name}</h3>
-                
+
                 <div className="space-y-3 text-sm text-muted-foreground">
                   <div className="flex items-center gap-3">
                     <Mail className="w-4 h-4 text-primary/70" />
