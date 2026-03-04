@@ -1,82 +1,3 @@
-// import React from "react";
-// import { useLocation } from "wouter";
-// import { useTemplates } from "@/hooks/use-templates";
-// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Button } from "@/components/ui/button";
-// import { ArrowLeft, FileText, ChevronRight } from "lucide-react";
-// import { Skeleton } from "@/components/ui/skeleton";
-
-// export default function SelectTemplate() {
-//   const [, setLocation] = useLocation();
-//   const { data: templates, isLoading } = useTemplates();
-
-//   if (isLoading) {
-//     return (
-//       <div className="max-w-4xl mx-auto space-y-6">
-//         <Skeleton className="h-10 w-48" />
-//         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-//           {[1, 2, 3, 4].map((i) => (
-//             <Skeleton key={i} className="h-48 rounded-xl" />
-//           ))}
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
-//       <Button variant="ghost" className="mb-2 hover-elevate text-muted-foreground hover:text-foreground" onClick={() => setLocation("/contracts")}>
-//         <ArrowLeft className="w-4 h-4 mr-2" />
-//         Back to Contracts
-//       </Button>
-
-//       <div className="mb-8 text-center">
-//         <h1 className="text-4xl font-display font-bold text-foreground">Choose a Contract Template</h1>
-//         <p className="text-muted-foreground mt-2 text-lg">Select the appropriate blueprint for your new project.</p>
-//       </div>
-
-//       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-//         {templates?.map((template) => (
-//           <Card 
-//             key={template.id} 
-//             className="group hover-elevate cursor-pointer border-none shadow-md hover:shadow-xl transition-all duration-300 overflow-hisdden bg-card/50 backdrop-blur-sm"
-//             onClick={() => setLocation(`/contracts/new?templateId=${template.id}`)}
-//           >
-//             <CardHeader className="bg-primary/5 group-hover:bg-primary/10 transition-colors pb-4">
-//               <div className="flex items-start justify-between">
-//                 <div className="bg-primary/10 p-2 rounded-lg text-primary">
-//                   <FileText className="w-6 h-6" />
-//                 </div>
-//                 <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-//               </div>
-//               <CardTitle className="text-xl font-display mt-4 group-hover:text-primary transition-colors">{template.name}</CardTitle>
-//             </CardHeader>
-//             <CardContent className="pt-4 flex-1 flex flex-col justify-between">
-//               <div>
-//                 <CardDescription className="text-sm leading-relaxed min-h-[3rem]">
-//                   {template.description}
-//                 </CardDescription>
-//                 <div className="mt-6 flex flex-wrap gap-2">
-//                   <span className="text-[10px] uppercase tracking-wider font-bold bg-muted px-2 py-1 rounded">
-//                     {template.defaultDurationMonths} Months
-//                   </span>
-//                   <span className="text-[10px] uppercase tracking-wider font-bold bg-muted px-2 py-1 rounded">
-//                     Standard Terms
-//                   </span>
-//                 </div>
-//               </div>
-//               <Button variant="outline" size="sm" className="mt-6 w-full group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
-//                 View Sample
-//               </Button>
-//             </CardContent>
-//           </Card>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// }
-
-
 import React from "react";
 import { useLocation } from "wouter";
 import { useTemplates } from "@/hooks/use-templates";
@@ -85,62 +6,68 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Dummy templates data
-const DUMMY_TEMPLATES = [
-  {
-    id: 1,
-    name: "Construction Contract",
-    description: "Standard construction agreement for building projects including payment terms, milestones, and compliance requirements.",
-    defaultProjectName: "Construction Project",
-    defaultBudgetAmount: 150000,
-    defaultDurationMonths: 12
-  },
-  {
-    id: 2,
-    name: "Consulting Services Agreement",
-    description: "Professional services contract for consultants covering scope of work, deliverables, and payment terms.",
-    defaultProjectName: "Consulting Engagement",
-    defaultBudgetAmount: 50000,
-    defaultDurationMonths: 6
-  },
-  {
-    id: 3,
-    name: "Software Development Contract",
-    description: "Agreement for custom software development including IP rights, milestones, and acceptance criteria.",
-    defaultProjectName: "Software Development",
-    defaultBudgetAmount: 75000,
-    defaultDurationMonths: 4
-  },
-  {
-    id: 4,
-    name: "Maintenance Services Agreement",
-    description: "Ongoing maintenance and support services contract with SLA terms and renewal conditions.",
-    defaultProjectName: "Maintenance Services",
-    defaultBudgetAmount: 25000,
-    defaultDurationMonths: 24
-  }
-];
+// Define the Template type based on your schema
+// interface Template {
+//   id: number;
+//   name: string;
+//   description: string;
+//   default_project_name: string | null;
+//   default_budget_amount: string | null;
+//   default_duration_months: number | null;
+//   base_content: string | null;
+// }
 
 export default function SelectTemplate() {
   const [, setLocation] = useLocation();
-  const { data: templates, isLoading } = useTemplates();
+  const { data: templates, isLoading, error } = useTemplates();
 
-  // Use API templates if available, otherwise use dummy templates
-  const displayTemplates = templates?.length ? templates : DUMMY_TEMPLATES;
-  // const loading = isLoading && !templates?.length;
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <Skeleton className="h-10 w-48" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-48 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
-  // if (loading) {
-  //   return (
-  //     <div className="max-w-4xl mx-auto space-y-6">
-  //       <Skeleton className="h-10 w-48" />
-  //       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-  //         {[1, 2, 3, 4].map((i) => (
-  //           <Skeleton key={i} className="h-48 rounded-xl" />
-  //         ))}
-  //       </div>
-  //     </div>
-  //   );
-  // }
+  // Show error state if something went wrong
+  if (error) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <Button variant="ghost" className="mb-2" onClick={() => setLocation("/contracts")}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Contracts
+        </Button>
+        <div className="text-center p-12 bg-destructive/10 rounded-xl border border-destructive/20">
+          <FileText className="w-12 h-12 text-destructive mx-auto mb-4 opacity-50" />
+          <h3 className="text-lg font-bold text-destructive">Failed to load templates</h3>
+          <p className="text-muted-foreground mt-1">Please try again later.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if no templates found
+  if (!templates || templates.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <Button variant="ghost" className="mb-2" onClick={() => setLocation("/contracts")}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Contracts
+        </Button>
+        <div className="text-center p-12 bg-card rounded-xl border border-border">
+          <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+          <h3 className="text-lg font-bold">No templates available</h3>
+          <p className="text-muted-foreground mt-1">Please check back later.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -155,7 +82,7 @@ export default function SelectTemplate() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {displayTemplates.map((template) => (
+        {templates.map((template) => (
           <Card 
             key={template.id} 
             className="group hover-elevate cursor-pointer border-none shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden bg-card/50 backdrop-blur-sm"
