@@ -15,9 +15,9 @@ interface AuthContextType {
 }
 
 const MOCK_USERS: Record<Role, User> = {
-  contract_manager: { id: 1, fullName: "Dr. Eleanor Vance", email: "admin@university.edu", role: "contract_manager" },
-  reviewer: { id: 2, fullName: "Prof. Arthur Pendelton", email: "reviewer@university.edu", role: "reviewer" },
-  vendor: { id: 3, fullName: "Acme Supplies Rep", email: "contact@acme.com", role: "vendor" },
+  contract_manager: { id: 1, fullName: "Alice Admin", email: "alice@uni.edu", role: "contract_manager" },
+  reviewer: { id: 2, fullName: "Bob Reviewer", email: "bob@uni.edu", role: "reviewer" },
+  vendor: { id: 3, fullName: "Charlie Vendor", email: "charlie@vendor.com", role: "vendor" },
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
