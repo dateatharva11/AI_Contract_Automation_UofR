@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/rich-text-editor";
 import { StatusBadge } from "@/components/status-badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Wand2, ShieldAlert, CheckSquare, History, Check, Save } from "lucide-react";
@@ -150,10 +151,9 @@ export default function ContractWorkspace() {
             </Button>
           </div>
           <div className="flex-1 p-0 relative">
-            <Textarea 
-              value={localContent}
-              onChange={(e) => setLocalContent(e.target.value)}
-              className="w-full h-full p-6 resize-none border-none focus-visible:ring-0 text-base font-serif leading-relaxed bg-background"
+            <RichTextEditor
+              content={localContent}
+              onChange={setLocalContent}
               placeholder={isGenerating ? "Generating contract draft..." : "Document content will appear here..."}
               disabled={user.role === 'vendor'}
             />
