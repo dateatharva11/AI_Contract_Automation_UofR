@@ -89,6 +89,7 @@ export function AppSidebar() {
 }
 
 function NotificationBell() {
+  const { user } = useAuth();
   const { data: notifications } = useNotifications();
   const { mutate: markRead } = useMarkNotificationRead();
   const unreadCount = notifications?.filter(n => !n.read).length || 0;

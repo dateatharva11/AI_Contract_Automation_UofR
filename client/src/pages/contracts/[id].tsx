@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { User } from "@shared/schema";
 import { useContract, useUpdateContract, useGenerateDraft, useAnalyzeContract, useAuditLogs } from "@/hooks/use-contracts";
 import { useAuth } from "@/hooks/use-auth";
+import { queryClient } from "@/lib/queryClient";
+import { api } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,6 +61,8 @@ export default function ContractWorkspace() {
           'signed': "Contract signed successfully."
         };
         toast({ title: messages[newStatus] || "Status updated" });
+        // Invalidate notifications to show the new ones immediately
+        queryClient.invalidateQueries({ queryKey: [api.notifications.list.path] });
       }
     });
   };

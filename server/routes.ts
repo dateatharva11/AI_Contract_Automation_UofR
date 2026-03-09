@@ -383,11 +383,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   // Notifications
   app.get(api.notifications.list.path, async (req, res) => {
-    // In a real app, we'd get userId from session. Here we use a mock based on role.
-    // This is just for demonstration.
-    const allUsers = await storage.getUsers();
-    // Use the first user found for simplicity in this mock
-    const notifications = await storage.getNotifications(1); 
+    const userId = Number(req.query.userId);
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: "userId query parameter is required" });
+    }
+    const notifications = await storage.getNotifications(userId); 
     res.json(notifications);
   });
 
