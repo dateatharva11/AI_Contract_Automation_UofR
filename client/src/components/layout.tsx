@@ -90,9 +90,17 @@ export function AppSidebar() {
 
 function NotificationBell() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const { data: notifications } = useNotifications();
   const { mutate: markRead } = useMarkNotificationRead();
   const unreadCount = notifications?.filter(n => !n.read).length || 0;
+
+  const handleNotificationClick = (notification: any) => {
+    if (!notification.read) {
+      markRead(notification.id);
+    }
+    setLocation(`/contracts/${notification.contractId}`);
+  };
 
   return (
     <Popover>
@@ -121,7 +129,7 @@ function NotificationBell() {
                 <div 
                   key={n.id} 
                   className={`p-4 transition-colors hover:bg-muted/50 cursor-pointer ${!n.read ? 'bg-primary/5' : ''}`}
-                  onClick={() => !n.read && markRead(n.id)}
+                  onClick={() => handleNotificationClick(n)}
                 >
                   <div className="flex gap-3">
                     <div className={`mt-0.5 h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
