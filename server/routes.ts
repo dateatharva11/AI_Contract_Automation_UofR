@@ -226,7 +226,20 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const contract = await storage.updateContract(contractId, input);
       if (!contract) return res.status(404).json({ message: 'Contract not found' });
       
-      await storage.createAuditLog({ contractId: contract.id, userId: 1, action: 'updated', details: `Contract status changed to ${contract.status}` });
+      const userId = input.userId || 1;
+      let auditAction = 'updated';
+      let auditDetails = '';
+
+      if (input.documentContent && input.documentContent !== oldContract?.documentContent) {
+        const user = await storage.getUser(userId);
+        auditAction = 'edited';
+        auditDetails = `Contract edited by ${user?.fullName || 'Unknown User'}`;
+      } else if (input.status && input.status !== oldContract?.status) {
+        auditAction = 'updated';
+        auditDetails = `Contract status changed to ${contract.status}`;
+      }
+
+      await storage.createAuditLog({ contractId: contract.id, userId, action: auditAction, details: auditDetails });
 
       // Handle Notifications on status change
       if (input.status && input.status !== oldContract?.status) {
