@@ -10,6 +10,7 @@ import { TableHeader } from '@tiptap/extension-table-header';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { Placeholder } from '@tiptap/extension-placeholder';
 import { Button } from '@/components/ui/button';
+import { useEffect } from 'react';
 import { 
   Bold, Italic, Underline as UnderlineIcon, 
   AlignLeft, AlignCenter, AlignRight, 
@@ -47,12 +48,19 @@ export function RichTextEditor({ content, onChange, placeholder, disabled }: Ric
         placeholder: placeholder || 'Start typing...',
       }),
     ],
-    content: content,
+    content: content || '<p></p>',
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
     editable: !disabled,
   });
+
+  // Update editor content when the prop changes
+  useEffect(() => {
+    if (editor && content && editor.getHTML() !== content) {
+      editor.commands.setContent(content, false);
+    }
+  }, [content, editor]);
 
   if (!editor) {
     return null;
