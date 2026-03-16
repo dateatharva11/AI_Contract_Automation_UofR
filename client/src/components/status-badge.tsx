@@ -9,7 +9,7 @@ export function StatusBadge({ status }: { status: string }) {
     case 'approved':
       return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-transparent">Approved</Badge>;
     case 'signed':
-      return <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-transparent">Signed</Badge>;
+      return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 border-transparent">Signed</Badge>;
     default:
       return <Badge variant="outline" className="capitalize">{status.replace('_', ' ')}</Badge>;
   }
