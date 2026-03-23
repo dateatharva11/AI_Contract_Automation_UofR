@@ -44,7 +44,8 @@ export const api = {
         startDate: z.coerce.date(),
         endDate: z.coerce.date(),
         budgetAmount: z.union([z.string(), z.number()]).transform(val => String(val)),
-        vendorId: z.coerce.number()
+        vendorId: z.coerce.number(),
+        documentContent: z.string().optional(), 
       }),
       responses: { 201: z.custom<typeof contracts.$inferSelect>(), 400: errorSchemas.validation },
     },
@@ -54,6 +55,7 @@ export const api = {
       input: z.object({
         status: z.string().optional(),
         documentContent: z.string().optional(),
+        userId: z.number().optional(),
       }),
       responses: { 200: z.custom<typeof contracts.$inferSelect>(), 400: errorSchemas.validation, 404: errorSchemas.notFound },
     },
