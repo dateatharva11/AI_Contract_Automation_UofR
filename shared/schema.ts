@@ -35,6 +35,7 @@ export const contractTemplates = pgTable("contract_templates", {
   defaultDurationMonths: integer("default_duration_months"),
   baseContent: text("base_content"),
   docContent: text("doc_content"),                           // This will store the HTML template
+  plainContent: text("plain_content"),                       // This will store the plain text content of the template
 });
 
 // --- Contracts ---
