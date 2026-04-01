@@ -3,163 +3,172 @@ import type { Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import OpenAI from "openai";
+// import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateEmbedding } from "./vector/embeddings";
+import { getContractContext } from "./vector/search";
+// import { searchSimilarChunks } from "./vector/search";
+import dotenv from 'dotenv';
 
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
+dotenv.config();
 
-async function seedDatabase() {
-  const users = await storage.getUsers();
-  if (users.length === 0) {
-    const admin = await storage.createUser({ username: 'admin1', password: 'password', role: 'contract_manager', fullName: 'Alice Admin', email: 'alice@uni.edu' });
-    const reviewer = await storage.createUser({ username: 'reviewer1', password: 'password', role: 'reviewer', fullName: 'Bob Reviewer', email: 'bob@uni.edu' });
-    const vendorUser = await storage.createUser({ username: 'vendor1', password: 'password', role: 'vendor', fullName: 'Charlie Vendor', email: 'charlie@vendor.com' });
+// const openai = new OpenAI({
+//   apiKey: process.env.OPENAI_API_KEY,
+// });
+
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_STUDIO_API_KEY || '');
+
+
+// async function seedDatabase() {
+//   const users = await storage.getUsers();
+//   if (users.length === 0) {
+//     const admin = await storage.createUser({ username: 'admin1', password: 'password', role: 'contract_manager', fullName: 'Alice Admin', email: 'alice@uni.edu' });
+//     const reviewer = await storage.createUser({ username: 'reviewer1', password: 'password', role: 'reviewer', fullName: 'Bob Reviewer', email: 'bob@uni.edu' });
+//     const vendorUser = await storage.createUser({ username: 'vendor1', password: 'password', role: 'vendor', fullName: 'Charlie Vendor', email: 'charlie@vendor.com' });
     
-    // Seed Vendors
-    const vendor1 = await storage.createVendor({
-      name: "Turner Construction Company",
-      contactEmail: "sarah.johnson@turner.com",
-      phone: "212-555-0123",
-      address: "212-555-0123",
-      defaultRates: "Standard GMP fee 3.5%",
-      insuranceCertUrl: "General Liability $5M, Workers Comp, Auto Liability"
-    });
+//     // Seed Vendors
+//     const vendor1 = await storage.createVendor({
+//       name: "Turner Construction Company",
+//       contactEmail: "sarah.johnson@turner.com",
+//       phone: "212-555-0123",
+//       address: "212-555-0123",
+//       defaultRates: "Standard GMP fee 3.5%",
+//       insuranceCertUrl: "General Liability $5M, Workers Comp, Auto Liability"
+//     });
 
-    const vendor2 = await storage.createVendor({
-      name: "Gilbane Building Company",
-      contactEmail: "mchen@gilbane.com",
-      phone: "401-555-0456",
-      address: "401-555-0456",
-      defaultRates: "Standard GMP fee 3.25% with incentive",
-      insuranceCertUrl: "General Liability $10M, Umbrella $10M"
-    });
+//     const vendor2 = await storage.createVendor({
+//       name: "Gilbane Building Company",
+//       contactEmail: "mchen@gilbane.com",
+//       phone: "401-555-0456",
+//       address: "401-555-0456",
+//       defaultRates: "Standard GMP fee 3.25% with incentive",
+//       insuranceCertUrl: "General Liability $10M, Umbrella $10M"
+//     });
 
-    const vendor3 = await storage.createVendor({
-      name: "Whiting-Turner Contracting",
-      contactEmail: "drodriguez@whiting-turner.com",
-      phone: "410-555-0789",
-      address: "410-555-0789",
-      defaultRates: "Standard GMP fee 3.75%",
-      insuranceCertUrl: "General Liability $7.5M, Professional Liability $3M"
-    });
+//     const vendor3 = await storage.createVendor({
+//       name: "Whiting-Turner Contracting",
+//       contactEmail: "drodriguez@whiting-turner.com",
+//       phone: "410-555-0789",
+//       address: "410-555-0789",
+//       defaultRates: "Standard GMP fee 3.75%",
+//       insuranceCertUrl: "General Liability $7.5M, Professional Liability $3M"
+//     });
 
-    // Seed Templates
-    await storage.createTemplate({
-      name: "University New Academic Building Contract",
-      description: "Standard AIA-based contract for new academic construction projects including classrooms, labs, and faculty offices",
-      defaultProjectName: "New Academic Building - [Name]",
-      defaultBudgetAmount: "5000000.00",
-      defaultDurationMonths: 24,
-      baseContent: JSON.stringify({
-        template_type: "new_construction",
-        standard_clauses: [
-          {
-            title: "AIA A101-2017 - Standard Form of Agreement",
-            content: "This Agreement is made on [DATE] between [UNIVERSITY NAME] (the 'Owner') and [CONTRACTOR NAME] (the 'Contractor') for construction of [PROJECT NAME] located at [PROJECT ADDRESS]...",
-            clause_type: "core_agreement"
-          },
-          {
-            title: "AIA A201-2017 - General Conditions",
-            content: "The General Conditions of the Contract for Construction, AIA Document A201-2017, are hereby incorporated by reference as if fully set forth herein...",
-            clause_type: "general_conditions"
-          },
-          {
-            title: "LEED Certification Requirement",
-            content: "Contractor shall design and construct the Project to achieve a minimum LEED Silver certification as defined by the U.S. Green Building Council. All costs associated with certification shall be included in the Contract Sum...",
-            clause_type: "special_requirement"
-          },
-          {
-            title: "State Higher Education Compliance",
-            content: "All work shall comply with [STATE] Higher Education Facilities Regulations, including but not limited to accessibility standards, fire safety codes, and reporting requirements to the Department of Education...",
-            clause_type: "compliance"
-          }
-        ]
-      })
-    });
+//     // Seed Templates
+//     await storage.createTemplate({
+//       name: "University New Academic Building Contract",
+//       description: "Standard AIA-based contract for new academic construction projects including classrooms, labs, and faculty offices",
+//       defaultProjectName: "New Academic Building - [Name]",
+//       defaultBudgetAmount: "5000000.00",
+//       defaultDurationMonths: 24,
+//       baseContent: JSON.stringify({
+//         template_type: "new_construction",
+//         standard_clauses: [
+//           {
+//             title: "AIA A101-2017 - Standard Form of Agreement",
+//             content: "This Agreement is made on [DATE] between [UNIVERSITY NAME] (the 'Owner') and [CONTRACTOR NAME] (the 'Contractor') for construction of [PROJECT NAME] located at [PROJECT ADDRESS]...",
+//             clause_type: "core_agreement"
+//           },
+//           {
+//             title: "AIA A201-2017 - General Conditions",
+//             content: "The General Conditions of the Contract for Construction, AIA Document A201-2017, are hereby incorporated by reference as if fully set forth herein...",
+//             clause_type: "general_conditions"
+//           },
+//           {
+//             title: "LEED Certification Requirement",
+//             content: "Contractor shall design and construct the Project to achieve a minimum LEED Silver certification as defined by the U.S. Green Building Council. All costs associated with certification shall be included in the Contract Sum...",
+//             clause_type: "special_requirement"
+//           },
+//           {
+//             title: "State Higher Education Compliance",
+//             content: "All work shall comply with [STATE] Higher Education Facilities Regulations, including but not limited to accessibility standards, fire safety codes, and reporting requirements to the Department of Education...",
+//             clause_type: "compliance"
+//           }
+//         ]
+//       })
+//     });
 
-    await storage.createTemplate({
-      name: "University Renovation Contract",
-      description: "Contract for renovation, rehabilitation, and improvement projects in existing university buildings",
-      defaultProjectName: "Campus Renovation - [Building]",
-      defaultBudgetAmount: "500000.00",
-      defaultDurationMonths: 6,
-      baseContent: JSON.stringify({
-        template_type: "renovation",
-        standard_clauses: [
-          {
-            title: "AIA A103-2017 - Cost Plus Agreement",
-            content: "The Contract Sum is the Cost of the Work as defined in the General Conditions plus the Contractor's Fee. The Contractor's Fee shall be [FEE_PERCENTAGE]% of the Cost of the Work...",
-            clause_type: "core_agreement"
-          },
-          {
-            title: "Modified General Conditions for Occupied Buildings",
-            content: "Contractor acknowledges that portions of the building may remain occupied during construction. Work in occupied areas shall be performed outside normal business hours (after 6 PM weekdays and weekends) unless otherwise approved in writing by Owner. Contractor shall implement dust control measures, maintain egress paths, and provide temporary barriers...",
-            clause_type: "special_condition"
-          },
-          {
-            title: "Hazardous Materials Protocol",
-            content: "Prior to commencing any demolition or renovation work, Contractor shall review the Owner-provided Asbestos Inspection Report. Should suspect materials be encountered, work shall cease immediately and Owner notified within 2 hours...",
-            clause_type: "safety_requirement"
-          }
-        ]
-      })
-    });
+//     await storage.createTemplate({
+//       name: "University Renovation Contract",
+//       description: "Contract for renovation, rehabilitation, and improvement projects in existing university buildings",
+//       defaultProjectName: "Campus Renovation - [Building]",
+//       defaultBudgetAmount: "500000.00",
+//       defaultDurationMonths: 6,
+//       baseContent: JSON.stringify({
+//         template_type: "renovation",
+//         standard_clauses: [
+//           {
+//             title: "AIA A103-2017 - Cost Plus Agreement",
+//             content: "The Contract Sum is the Cost of the Work as defined in the General Conditions plus the Contractor's Fee. The Contractor's Fee shall be [FEE_PERCENTAGE]% of the Cost of the Work...",
+//             clause_type: "core_agreement"
+//           },
+//           {
+//             title: "Modified General Conditions for Occupied Buildings",
+//             content: "Contractor acknowledges that portions of the building may remain occupied during construction. Work in occupied areas shall be performed outside normal business hours (after 6 PM weekdays and weekends) unless otherwise approved in writing by Owner. Contractor shall implement dust control measures, maintain egress paths, and provide temporary barriers...",
+//             clause_type: "special_condition"
+//           },
+//           {
+//             title: "Hazardous Materials Protocol",
+//             content: "Prior to commencing any demolition or renovation work, Contractor shall review the Owner-provided Asbestos Inspection Report. Should suspect materials be encountered, work shall cease immediately and Owner notified within 2 hours...",
+//             clause_type: "safety_requirement"
+//           }
+//         ]
+//       })
+//     });
 
-    await storage.createTemplate({
-      name: "Design-Build Agreement (University)",
-      description: "Integrated design-build contract combining architectural design and construction services",
-      defaultProjectName: "Design-Build Project - [Project]",
-      defaultBudgetAmount: "2000000.00",
-      defaultDurationMonths: 18,
-      baseContent: JSON.stringify({
-        template_type: "design_build",
-        standard_clauses: [
-          {
-            title: "AIA A141-2014 - Design-Build Agreement",
-            content: "This Agreement is between [UNIVERSITY NAME] (the 'Owner') and [DESIGN-BUILDER NAME] (the 'Design-Builder') for the design and construction of [PROJECT NAME]. The Design-Builder shall provide all design services and construction necessary to complete the Project in accordance with the Owner's Criteria...",
-            clause_type: "core_agreement"
-          },
-          {
-            title: "AIA A142-2014 - Design-Builder's Contract",
-            content: "The Design-Builder shall provide architectural, engineering, and other design services through its design team, and construction services through its construction team. The Design-Builder bears sole responsibility for coordination between design and construction phases...",
-            clause_type: "subcontractor_agreement"
-          },
-          {
-            title: "Integrated Project Delivery Approach",
-            content: "Parties agree to utilize integrated project delivery methods including colocation of key team members, shared risk/reward pools, and building information modeling (BIM) coordination throughout design and construction...",
-            clause_type: "methodology"
-          },
-          {
-            title: "Early Contractor Involvement",
-            content: "The Design-Builder shall engage key trade contractors during design development to provide constructability review, cost estimating, and value engineering recommendations prior to final design completion...",
-            clause_type: "process_requirement"
-          }
-        ]
-      })
-    });
+//     await storage.createTemplate({
+//       name: "Design-Build Agreement (University)",
+//       description: "Integrated design-build contract combining architectural design and construction services",
+//       defaultProjectName: "Design-Build Project - [Project]",
+//       defaultBudgetAmount: "2000000.00",
+//       defaultDurationMonths: 18,
+//       baseContent: JSON.stringify({
+//         template_type: "design_build",
+//         standard_clauses: [
+//           {
+//             title: "AIA A141-2014 - Design-Build Agreement",
+//             content: "This Agreement is between [UNIVERSITY NAME] (the 'Owner') and [DESIGN-BUILDER NAME] (the 'Design-Builder') for the design and construction of [PROJECT NAME]. The Design-Builder shall provide all design services and construction necessary to complete the Project in accordance with the Owner's Criteria...",
+//             clause_type: "core_agreement"
+//           },
+//           {
+//             title: "AIA A142-2014 - Design-Builder's Contract",
+//             content: "The Design-Builder shall provide architectural, engineering, and other design services through its design team, and construction services through its construction team. The Design-Builder bears sole responsibility for coordination between design and construction phases...",
+//             clause_type: "subcontractor_agreement"
+//           },
+//           {
+//             title: "Integrated Project Delivery Approach",
+//             content: "Parties agree to utilize integrated project delivery methods including colocation of key team members, shared risk/reward pools, and building information modeling (BIM) coordination throughout design and construction...",
+//             clause_type: "methodology"
+//           },
+//           {
+//             title: "Early Contractor Involvement",
+//             content: "The Design-Builder shall engage key trade contractors during design development to provide constructability review, cost estimating, and value engineering recommendations prior to final design completion...",
+//             clause_type: "process_requirement"
+//           }
+//         ]
+//       })
+//     });
 
-    const vendor = vendor1;
+//     const vendor = vendor1;
 
-    const contract = await storage.createContract({
-      projectName: 'Campus Wifi Upgrade',
-      projectNumber: 'IT-2025-01',
-      vendorId: vendor.id,
-      startDate: new Date('2025-06-01'),
-      endDate: new Date('2025-12-31'),
-      budgetAmount: "250000.00"
-    });
+//     const contract = await storage.createContract({
+//       projectName: 'Campus Wifi Upgrade',
+//       projectNumber: 'IT-2025-01',
+//       vendorId: vendor.id,
+//       startDate: new Date('2025-06-01'),
+//       endDate: new Date('2025-12-31'),
+//       budgetAmount: "250000.00"
+//     });
 
-    await storage.updateContract(contract.id, {
-      status: 'draft',
-      documentContent: 'This is the draft agreement between the University and Acme Corp for the Campus Wifi Upgrade project.',
-    });
-  }
-}
+//     await storage.updateContract(contract.id, {
+//       status: 'draft',
+//       documentContent: 'This is the draft agreement between the University and Acme Corp for the Campus Wifi Upgrade project.',
+//     });
+//   }
+// }
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
-  await seedDatabase();
+  // await seedDatabase();
 
   // Users
   app.get(api.users.list.path, async (req, res) => {
@@ -425,7 +434,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 }
 
 // Seed reviewers if they don't exist
-import { storage } from "./storage";
 (async () => {
   const users = await storage.getUsers();
   const reviewers = users.filter(u => u.role === 'reviewer');
