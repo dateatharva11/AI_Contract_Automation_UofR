@@ -2,35 +2,35 @@ import React, { createContext, useContext, useState, ReactNode } from "react";
 
 export type Role = "contract_manager" | "reviewer" | "vendor";
 
-interface User {
+export interface AuthUser {
   id: number;
   fullName: string;
   email: string;
   role: Role;
+  username?: string;
 }
 
 interface AuthContextType {
-  user: User;
-  setRole: (role: Role) => void;
+  user: AuthUser;
+  setUser: (user: AuthUser) => void;
 }
 
-const MOCK_USERS: Record<Role, User> = {
-  contract_manager: { id: 1, fullName: "Alice Admin", email: "alice@uni.edu", role: "contract_manager" },
-  reviewer: { id: 2, fullName: "Bob Reviewer", email: "bob@uni.edu", role: "reviewer" },
-  vendor: { id: 3, fullName: "Charlie Vendor", email: "charlie@vendor.com", role: "vendor" },
+const DEFAULT_USER: AuthUser = {
+  id: 1,
+  fullName: "Alice Admin",
+  email: "alice@uni.edu",
+  role: "contract_manager",
+  username: "admin1",
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User>(MOCK_USERS.contract_manager);
+  const [user, setUser] = useState<AuthUser>(DEFAULT_USER);
 
-  const setRole = (role: Role) => {
-    setUser(MOCK_USERS[role]);
-  };
 
   return (
-    <AuthContext.Provider value={{ user, setRole }}>
+    <AuthContext.Provider value={{ user, setUser }}>
       {children}
     </AuthContext.Provider>
   );
