@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation, Link } from "wouter";
-import { Bell, FileText, LayoutDashboard, Building2, Settings, LogOut, GraduationCap, CheckCircle2, ShieldAlert } from "lucide-react";
+import { Bell, FileText, LayoutDashboard, Building2, Settings, LogOut, GraduationCap, CheckCircle2, ShieldAlert, ChevronDown } from "lucide-react";
 import { useNotifications, useMarkNotificationRead } from "@/hooks/use-notifications";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -21,9 +21,11 @@ import {
   SidebarHeader,
   SidebarFooter
 } from "@/components/ui/sidebar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useAuth, Role } from "@/hooks/use-auth";
+import { useAuth, AuthUser, Role } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
+import { User } from "@shared/schema";
+
 
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -159,8 +161,122 @@ function NotificationBell() {
   );
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  contract_manager: "Contract Manager",
+  reviewer: "Reviewer",
+  vendor: "Vendor",
+};
+
+function UserSwitcher() {
+  const { user, setUser } = useAuth();
+  const [open, setOpen] = React.useState(false);
+
+  const { data: allUsers = [] } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+  });
+
+  // Normalize legacy "admin" role to "contract_manager"
+  const normalizeRole = (role: string): Role => {
+    if (role === "admin") return "contract_manager";
+    return role as Role;
+  };
+
+  const handleSelect = (apiUser: User) => {
+    setUser({
+      id: apiUser.id,
+      fullName: apiUser.fullName,
+      email: apiUser.email,
+      role: normalizeRole(apiUser.role),
+      username: apiUser.username,
+    });
+    setOpen(false);
+  };
+
+  // Group users by normalized role
+  const grouped = allUsers.reduce<Record<string, User[]>>((acc, u) => {
+    const role = normalizeRole(u.role);
+    if (!acc[role]) acc[role] = [];
+    acc[role].push(u);
+    return acc;
+  }, {});
+
+  const roleOrder = ["contract_manager", "reviewer", "vendor"];
+
+  // Generate a consistent color based on user name
+  const getAvatarColor = (name: string) => {
+    const colors = [
+      "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500", 
+      "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-orange-500"
+    ];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-muted-foreground font-medium hidden sm:block">Viewing as:</span>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className="h-9 px-3 flex items-center gap-2 min-w-[180px] justify-between"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <Avatar className={`h-6 w-6 ${getAvatarColor(user.fullName)} text-black shrink-0`}>
+                <AvatarFallback className="text-[11px] font-bold">{user.fullName.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <span className="text-sm font-medium truncate">{user.fullName}</span>
+            </div>
+            <ChevronDown className="w-4 h-4 opacity-50 shrink-0" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-72 p-2" align="end">
+          <div className="space-y-3">
+            {roleOrder.map((role) => {
+              const usersInRole = grouped[role];
+              if (!usersInRole || usersInRole.length === 0) return null;
+              return (
+                <div key={role}>
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-2 pb-1">
+                    {ROLE_LABELS[role] || role}
+                  </p>
+                  <div className="space-y-0.5">
+                    {usersInRole.map((u) => (
+                      <button
+                        key={u.id}
+                        onClick={() => handleSelect(u)}
+                        className={`w-full flex items-center gap-3 px-2 py-2 rounded-lg transition-colors text-left ${
+                          user.id === u.id
+                            ? "bg-primary/10"
+                            : "hover:bg-muted"
+                        }`}
+                      >
+                        <Avatar className={`h-7 w-7 ${getAvatarColor(u.fullName)} text-b shrink-0`}>
+                          <AvatarFallback className="text-xs font-bold">{u.fullName.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium truncate ${user.id === u.id ? "text-primary" : "text-foreground"}`}>
+                            {u.fullName}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground truncate">{u.email}</p>
+                        </div>
+                        {user.id === u.id && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { user, setRole } = useAuth();
   
   return (
     <SidebarProvider>
@@ -177,20 +293,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             
             <div className="flex items-center gap-4">
               <NotificationBell />
-              {/* Mock Auth Switcher for Demo */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground font-medium hidden sm:block">Viewing as:</span>
-                <Select value={user.role} onValueChange={(v) => setRole(v as Role)}>
-                  <SelectTrigger className="w-[160px] h-9 pl-[8px] pr-[8px]">
-                    <SelectValue placeholder="Select Role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="contract_manager">Contract Manager</SelectItem>
-                    <SelectItem value="reviewer">Reviewer</SelectItem>
-                    <SelectItem value="vendor">Vendor</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <UserSwitcher />
             </div>
           </header>
           
