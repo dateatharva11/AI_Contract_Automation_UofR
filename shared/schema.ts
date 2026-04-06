@@ -20,8 +20,27 @@ export const vendors = pgTable("vendors", {
   contactEmail: text("contact_email").notNull(),
   phone: text("phone"),
   address: text("address"),
-  defaultRates: text("default_rates"),
-  insuranceCertUrl: text("insurance_cert_url"),
+  additionalInfo: text("additional_info"),
+});
+
+// --- Owners ---
+export const owners = pgTable("owners", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  contactEmail: text("contact_email").notNull(),
+  phone: text("phone"),
+  address: text("address"),
+  additionalInfo: text("additional_info"),
+});
+
+// --- Architects ---
+export const architects = pgTable("architects", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  contactEmail: text("contact_email").notNull(),
+  phone: text("phone"),
+  address: text("address"),
+  additionalInfo: text("additional_info"),
 });
 
 // --- Contract Templates ---
@@ -124,6 +143,8 @@ export const insertContractSchema = createInsertSchema(contracts).omit({
 // --- Rest of the schemas ---
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertVendorSchema = createInsertSchema(vendors).omit({ id: true });
+export const insertOwnerSchema = createInsertSchema(owners).omit({ id: true });
+export const insertArchitectSchema = createInsertSchema(architects).omit({ id: true });
 export const insertContractTemplateSchema = createInsertSchema(contractTemplates).omit({ id: true });
 export const insertContractSectionSchema = createInsertSchema(contractSections).omit({ id: true });
 export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: true, createdAt: true });
@@ -132,6 +153,8 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 // --- Explicit API Contract Types ---
 export type User = typeof users.$inferSelect;
 export type Vendor = typeof vendors.$inferSelect;
+export type Owner = typeof owners.$inferSelect;
+export type Architect = typeof architects.$inferSelect;
 export type ContractTemplate = typeof contractTemplates.$inferSelect;
 export type Contract = typeof contracts.$inferSelect;
 export type ContractSection = typeof contractSections.$inferSelect;
@@ -140,6 +163,8 @@ export type Notification = typeof notifications.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertVendor = z.infer<typeof insertVendorSchema>;
+export type InsertOwner = z.infer<typeof insertOwnerSchema>;
+export type InsertArchitect = z.infer<typeof insertArchitectSchema>;
 export type InsertContractTemplate = z.infer<typeof insertContractTemplateSchema>;
 export type InsertContract = z.infer<typeof insertContractSchema>;
 export type InsertContractSection = z.infer<typeof insertContractSectionSchema>;
@@ -151,3 +176,7 @@ export type CreateVendorRequest = InsertVendor;
 export type UpdateVendorRequest = Partial<InsertVendor>;
 export type CreateSectionRequest = InsertContractSection;
 export type UpdateSectionRequest = Partial<InsertContractSection>;
+export type CreateOwnerRequest = InsertOwner;
+export type UpdateOwnerRequest = Partial<InsertOwner>;
+export type CreateArchitectRequest = InsertArchitect;
+export type UpdateArchitectRequest = Partial<InsertArchitect>;
