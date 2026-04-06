@@ -201,6 +201,56 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // Owners
+  app.get(api.owners.list.path, async (req, res) => {
+    const owners = await storage.getOwners();
+    res.json(owners);
+  });
+
+  app.get(api.owners.get.path, async (req, res) => {
+    const owner = await storage.getOwner(Number(req.params.id));
+    if (!owner) return res.status(404).json({ message: 'Owner not found' });
+    res.json(owner);
+  });
+
+  app.post(api.owners.create.path, async (req, res) => {
+    try {
+      const input = api.owners.create.input.parse(req.body);
+      const owner = await storage.createOwner(input);
+      res.status(201).json(owner);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message, field: err.errors[0].path.join('.') });
+      }
+      throw err;
+    }
+  });
+
+  // Architects
+  app.get(api.architects.list.path, async (req, res) => {
+    const architects = await storage.getArchitects();
+    res.json(architects);
+  });
+
+  app.get(api.architects.get.path, async (req, res) => {
+    const architect = await storage.getArchitect(Number(req.params.id));
+    if (!architect) return res.status(404).json({ message: 'Architect not found' });
+    res.json(architect);
+  });
+
+  app.post(api.architects.create.path, async (req, res) => {
+    try {
+      const input = api.architects.create.input.parse(req.body);
+      const architect = await storage.createArchitect(input);
+      res.status(201).json(architect);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message, field: err.errors[0].path.join('.') });
+      }
+      throw err;
+    }
+  });
+
   // Contracts
   app.get(api.contracts.list.path, async (req, res) => {
     const contracts = await storage.getContracts();
