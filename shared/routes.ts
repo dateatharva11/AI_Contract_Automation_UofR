@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertContractSchema, insertVendorSchema, insertContractSectionSchema, insertUserSchema, contracts, vendors, contractSections, auditLogs, users } from './schema';
+import { insertContractSchema, insertVendorSchema, insertOwnerSchema, insertArchitectSchema, insertContractSectionSchema, insertUserSchema, contracts, vendors, contractSections, auditLogs, users, owners, architects } from './schema';
 
 export const errorSchemas = {
   validation: z.object({ message: z.string(), field: z.string().optional() }),
@@ -24,6 +24,42 @@ export const api = {
       path: '/api/vendors' as const,
       input: insertVendorSchema,
       responses: { 201: z.custom<typeof vendors.$inferSelect>(), 400: errorSchemas.validation },
+    },
+  },
+  owners: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/owners' as const,
+      responses: { 200: z.array(z.custom<typeof owners.$inferSelect>()) },
+    },
+    get: {
+      method: 'GET' as const,
+      path: '/api/owners/:id' as const,
+      responses: { 200: z.custom<typeof owners.$inferSelect>(), 404: errorSchemas.notFound },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/owners' as const,
+      input: insertOwnerSchema,
+      responses: { 201: z.custom<typeof owners.$inferSelect>(), 400: errorSchemas.validation },
+    },
+  },
+  architects: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/architects' as const,
+      responses: { 200: z.array(z.custom<typeof architects.$inferSelect>()) },
+    },
+    get: {
+      method: 'GET' as const,
+      path: '/api/architects/:id' as const,
+      responses: { 200: z.custom<typeof architects.$inferSelect>(), 404: errorSchemas.notFound },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/architects' as const,
+      input: insertArchitectSchema,
+      responses: { 201: z.custom<typeof architects.$inferSelect>(), 400: errorSchemas.validation },
     },
   },
   contracts: {
