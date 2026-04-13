@@ -1,9 +1,10 @@
 import { db } from "./db";
 import {
-  users, vendors, contracts, contractSections, auditLogs, notifications, contractTemplates,
+  users, vendors, contracts, contractSections, auditLogs, notifications, contractTemplates, owners, architects,
   type InsertUser, type InsertVendor, type InsertContract, type InsertContractSection, type InsertNotification, type InsertContractTemplate,
   type User, type Vendor, type Contract, type ContractSection, type AuditLog, type Notification, type ContractTemplate,
-  type UpdateContractRequest, type UpdateVendorRequest, type UpdateSectionRequest
+  type UpdateContractRequest, type UpdateVendorRequest, type UpdateSectionRequest, type InsertOwner, type InsertArchitect, type Owner, type Architect,
+  type UpdateOwnerRequest, type UpdateArchitectRequest
 } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
@@ -73,6 +74,23 @@ export class DatabaseStorage implements IStorage {
   }
   async updateVendor(id: number, updates: UpdateVendorRequest): Promise<Vendor> {
     const [updated] = await db.update(vendors).set(updates).where(eq(vendors.id, id)).returning();
+    return updated;
+  }
+
+  // Owners
+  async getOwners(): Promise<Owner[]> {
+    return await db.select().from(owners);
+  }
+  async getOwner(id: number): Promise<Owner | undefined> {
+    const [owner] = await db.select().from(owners).where(eq(owners.id, id));
+    return owner;
+  }
+  async createOwner(owner: InsertOwner): Promise<Owner> {
+    const [newOwner] = await db.insert(owners).values(owner).returning();
+    return newOwner;
+  }
+  async updateOwner(id: number, updates: UpdateOwnerRequest): Promise<Owner> {
+    const [updated] = await db.update(owners).set(updates).where(eq(owners.id, id)).returning();
     return updated;
   }
 
