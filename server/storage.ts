@@ -94,6 +94,23 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  // Architects
+  async getArchitects(): Promise<Architect[]> {
+    return await db.select().from(architects);
+  }
+  async getArchitect(id: number): Promise<Architect | undefined> {
+    const [architect] = await db.select().from(architects).where(eq(architects.id, id));
+    return architect;
+  }
+  async createArchitect(architect: InsertArchitect): Promise<Architect> {
+    const [newArchitect] = await db.insert(architects).values(architect).returning();
+    return newArchitect;
+  }
+  async updateArchitect(id: number, updates: UpdateArchitectRequest): Promise<Architect> {
+    const [updated] = await db.update(architects).set(updates).where(eq(architects.id, id)).returning();
+    return updated;
+  }
+
   // Templates
   async getTemplates(): Promise<ContractTemplate[]> {
     return await db.select().from(contractTemplates);
