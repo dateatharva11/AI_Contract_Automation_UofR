@@ -13,6 +13,8 @@ import NewContract from "./pages/contracts/new";
 import SelectTemplate from "./pages/contracts/select-template";
 import ContractWorkspace from "./pages/contracts/[id]";
 import VendorsList from "./pages/vendors/index";
+import OwnersList from "./pages/owners/index";
+import ArchitectsList from "./pages/architects/index";
 
 function Router() {
   return (
@@ -24,7 +26,8 @@ function Router() {
         <Route path="/contracts/new" component={NewContract} />
         <Route path="/contracts/:id" component={ContractWorkspace} />
         <Route path="/vendors" component={VendorsList} />
-        <Route component={NotFound} />
+        <Route path="/owners" component={OwnersList} />
+        <Route path="/architects" component={ArchitectsList} />        <Route component={NotFound} />
       </Switch>
     </Layout>
   );
