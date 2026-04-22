@@ -1,3 +1,5 @@
+// Vendor / Contractor directory page
+
 import React, { useState } from "react";
 import { useVendors, useCreateVendor } from "@/hooks/use-vendors";
 import { useAuth } from "@/hooks/use-auth"; // This import was missing
@@ -11,6 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertVendorSchema } from "@shared/schema";
 import { z } from "zod";
 import { Search, Plus, Building2, Phone, Mail, MapPin } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function VendorsList() {
   const { user } = useAuth(); // Now this will work
@@ -26,8 +29,7 @@ export default function VendorsList() {
       contactEmail: "",
       phone: "",
       address: "",
-      defaultRates: "",
-      insuranceCertUrl: ""
+      additionalInfo: "",
     }
   });
 
@@ -94,6 +96,13 @@ export default function VendorsList() {
                     <FormItem>
                       <FormLabel>Address</FormLabel>
                       <FormControl><Input {...field} value={field.value || ""} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}/>
+                  <FormField control={form.control} name="additionalInfo" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Additional Information</FormLabel>
+                      <FormControl><Textarea className="rounded-xl min-h-[80px]" {...field} value={field.value || ""} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}/>
