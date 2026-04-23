@@ -259,7 +259,6 @@ export function parseHtmlToDocxElements(html: string) {
   return elements;
 }
 
-
 /**
  * Export as PDF using browser print functionality
  * This often gives better results with text selection and smaller file sizes
@@ -358,43 +357,3 @@ export async function exportAsPDF(elementId: string, filename: string = 'documen
     }
   }
 
-/**
- * Export content as DOCX - Simplified version that works reliably
- */
-export async function exportAsDOCX(content: string, filename: string = 'document.docx') {
-  try {
-    console.log('Generating DOCX...');
-    
-    // Convert HTML to plain text with basic formatting preserved
-    const plainText = htmlToPlainText(content);
-    
-    // Split into paragraphs
-    const paragraphs = plainText.split('\n\n').filter(p => p.trim());
-    
-    // Create document with simple structure
-    const doc = new Document({
-      creator: 'Contract Management System',
-      title: filename.replace('.docx', ''),
-      description: 'Exported contract document',
-      sections: [{
-        properties: {},
-        children: paragraphs.map(text => 
-          new Paragraph({
-            children: [new TextRun(text.trim())],
-            spacing: { after: 200 },
-          })
-        ),
-      }],
-    });
-
-    // Generate and download
-    const blob = await Packer.toBlob(doc);
-    saveAs(blob, filename);
-    
-    console.log('DOCX generated successfully');
-    return true;
-  } catch (error) {
-    console.error('Error generating DOCX:', error);
-    throw error;
-  }
-}
