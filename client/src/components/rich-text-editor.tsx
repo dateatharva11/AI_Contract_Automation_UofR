@@ -9,30 +9,31 @@ import { TableRow } from '@tiptap/extension-table-row';
 import { TableHeader } from '@tiptap/extension-table-header';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { Placeholder } from '@tiptap/extension-placeholder';
+import { useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { useEffect } from 'react';
-import { 
-  Bold, Italic, Underline as UnderlineIcon, 
-  AlignLeft, AlignCenter, AlignRight, 
-  List, ListOrdered, Link as LinkIcon,
-  Highlighter, Table as TableIcon,
-  Undo, Redo
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Bold, Italic, Underline as UnderlineIcon, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, Link as LinkIcon, Highlighter, Table as TableIcon, Undo, Redo } from 'lucide-react';
+import { PlaceholderMark } from '@/lib/tiptap-extensions/placeholder-mark';
 
 interface RichTextEditorProps {
-  content: string;
-  onChange: (content: string) => void;
+  htmlContent: string;
+  placeholderData: Record<string, any>;
+  onChange: (htmlContent: string, updatedData: Record<string, any>) => void;
   placeholder?: string;
   disabled?: boolean;
-  documentTitle?: string; // For export filename
 }
 
-export function RichTextEditor({ content, onChange, placeholder, disabled, documentTitle = 'document' }: RichTextEditorProps) {
-  const { toast } = useToast();
+export function RichTextEditor({ 
+  htmlContent, 
+  placeholderData, 
+  onChange, 
+  placeholder, 
+  disabled 
+}: RichTextEditorProps) {
+  
   const editor = useEditor({
     extensions: [
       StarterKit,
+      PlaceholderMark,
       Underline,
       TextAlign.configure({
         types: ['heading', 'paragraph'],
@@ -51,19 +52,48 @@ export function RichTextEditor({ content, onChange, placeholder, disabled, docum
         placeholder: placeholder || 'Start typing...',
       }),
     ],
-    content: content || '<p></p>',
+    content: htmlContent,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      const updatedHtml = editor.getHTML();
+      const updatedData = extractDataFromHTML(updatedHtml);
+      onChange(updatedHtml, updatedData);
     },
     editable: !disabled,
   });
 
-  // Update editor content when the prop changes
+  // Function to extract data from HTML with data-field attributes
+  const extractDataFromHTML = (html: string): Record<string, any> => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const data: Record<string, any> = {};
+    
+    doc.querySelectorAll('[data-field]').forEach(el => {
+      const key = el.getAttribute('data-field');
+      if (key) {
+        data[key] = el.textContent || '';
+      }
+    });
+    
+    return { ...placeholderData, ...data };
+  };
+
+  // Function to inject placeholder data into HTML template
+  const injectDataIntoHTML = useCallback((templateHTML: string, data: Record<string, any>): string => {
+    let result = templateHTML;
+    Object.entries(data).forEach(([key, value]) => {
+      const regex = new RegExp(`{{${key}}}`, 'g');
+      result = result.replace(regex, value);
+    });
+    return result;
+  }, []);
+
+  // Update editor content when props change
   useEffect(() => {
-    if (editor && content && editor.getHTML() !== content) {
-      editor.commands.setContent(content, false);
+    if (editor && htmlContent && editor.getHTML() !== htmlContent) {
+      const injectedContent = injectDataIntoHTML(htmlContent, placeholderData);
+      editor.commands.setContent(injectedContent, false);
     }
-  }, [content, editor]);
+  }, [htmlContent, placeholderData, editor, injectDataIntoHTML]);
 
   if (!editor) {
     return null;
@@ -229,7 +259,6 @@ export function RichTextEditor({ content, onChange, placeholder, disabled, docum
         </div>
       </div>
       
-      {/* Add an ID to the content div for PDF export */}
       <div id="editor-content" className="flex-1 overflow-y-auto p-4 prose prose-sm dark:prose-invert max-w-none focus:outline-none">
         <EditorContent editor={editor} className="h-full min-h-[200px]" />
       </div>
@@ -244,6 +273,12 @@ export function RichTextEditor({ content, onChange, placeholder, disabled, docum
         .ProseMirror {
           height: 100%;
           outline: none;
+        }
+        .ProseMirror [data-field] {
+          background-color: rgba(59, 130, 246, 0.1);
+          border-radius: 0.25rem;
+          padding: 0.125rem 0.25rem;
+          cursor: text;
         }
         .ProseMirror table {
           border-collapse: collapse;
