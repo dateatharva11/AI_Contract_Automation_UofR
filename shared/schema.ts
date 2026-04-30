@@ -55,6 +55,8 @@ export const contractTemplates = pgTable("contract_templates", {
   baseContent: text("base_content"),
   docContent: text("doc_content"),                           // This will store the HTML template
   plainContent: text("plain_content"),                       // This will store the plain text content of the template
+  template_file_path: text("template_file_path"),           // This will store the path to the template file in the supabase storage
+  exhibits: jsonb("exhibits").default([]),
 });
 
 // --- Contracts ---
@@ -85,7 +87,7 @@ export const contracts = pgTable("contracts", {
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   budgetAmount: numeric("budget_amount").notNull(),
-  status: text("status").notNull().default('draft'),  // draft, in_review, approved, signed, executed
+  status: text("status").notNull().default('draft'),  // draft, review, approved, signed, executed
   // Content & Analysis
   documentContent: text("document_content"),          // Full editable document
   aiAnalysis: jsonb("ai_analysis"),                   // AI findings, flagged clauses, scope alignment
@@ -93,6 +95,8 @@ export const contracts = pgTable("contracts", {
   // Metadata
   createdAt: timestamp("created_at").defaultNow(),
   templateId: integer("template_id"),
+  contract_docx_url: text("contract_docx_url"),       // This will store the URL of the generated DOCX file
+  placeholder_data: jsonb("placeholder_data"),        // This will store the placeholder data for the contract
 });
 
 // --- Notifications ---
@@ -133,11 +137,10 @@ export const insertContractSchema = createInsertSchema(contracts).omit({
   checklist: true, 
   status: true, 
   documentContent: true,
-  // These fields will be auto-populated from vendor data
-  vendorName: true,
-  vendorStatus: true,
-  vendorAddress: true,
-  vendorInfo: true
+  // vendorName: true,
+  // vendorStatus: true,
+  // vendorAddress: true,
+  // vendorInfo: true
 });
 
 // --- Rest of the schemas ---
@@ -171,7 +174,7 @@ export type InsertContractSection = z.infer<typeof insertContractSectionSchema>;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 export type CreateContractRequest = InsertContract;
-export type UpdateContractRequest = Partial<InsertContract> & { status?: string, documentContent?: string, aiAnalysis?: any, checklist?: any, userId?: number };
+export type UpdateContractRequest = Partial<InsertContract> & { status?: string, documentContent?: string, placeholderData?: Record<string, any>, aiAnalysis?: any, checklist?: any, userId?: number };
 export type CreateVendorRequest = InsertVendor;
 export type UpdateVendorRequest = Partial<InsertVendor>;
 export type CreateSectionRequest = InsertContractSection;
