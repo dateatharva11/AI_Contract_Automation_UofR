@@ -26,7 +26,7 @@ export default function Dashboard() {
   }
 
   const activeContracts = contracts?.filter(c => c.status !== 'signed') || [];
-  const inReview = contracts?.filter(c => c.status === 'in_review') || [];
+  const inReview = contracts?.filter(c => c.status === 'review') || [];
   const flagged = contracts?.filter(c => {
     // Basic mock check to see if it has flagged items
     const ai = c.aiAnalysis as any;
@@ -35,7 +35,7 @@ export default function Dashboard() {
 
   const chartData = [
     { name: "Drafts", value: contracts?.filter(c => c.status === 'draft').length || 0 },
-    { name: "In Review", value: inReview.length },
+    { name: "Review", value: inReview.length },
     { name: "Approved", value: contracts?.filter(c => c.status === 'approved').length || 0 },
     { name: "Signed", value: contracts?.filter(c => c.status === 'signed').length || 0 },
   ];
