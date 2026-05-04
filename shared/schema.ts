@@ -83,11 +83,14 @@ export const contracts = pgTable("contracts", {
   vendorStatus: text("vendor_status"),
   vendorAddress: text("vendor_address"),
   vendorInfo: text("vendor_info"),
-  // Contract Details
+  // Project Details
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   budgetAmount: numeric("budget_amount").notNull(),
+  // Contract Details
+  contractStartDate: timestamp("contract_start_date").notNull().defaultNow(),
   status: text("status").notNull().default('draft'),  // draft, review, approved, signed, executed
+  lastActivityAt: timestamp("last_activity_at").notNull().defaultNow(), 
   // Content & Analysis
   documentContent: text("document_content"),          // Full editable document
   aiAnalysis: jsonb("ai_analysis"),                   // AI findings, flagged clauses, scope alignment
@@ -137,6 +140,7 @@ export const insertContractSchema = createInsertSchema(contracts).omit({
   checklist: true, 
   status: true, 
   documentContent: true,
+  contractStartDate: true,
   // vendorName: true,
   // vendorStatus: true,
   // vendorAddress: true,
