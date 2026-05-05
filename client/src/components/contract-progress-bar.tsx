@@ -6,7 +6,7 @@ interface ContractProgressBarProps {
 
 const STAGES = [
   { key: 'draft', label: 'Draft' },
-  { key: 'in_review', label: 'In Review' },
+  { key: 'review', label: 'Review' },
   { key: 'approved', label: 'Approved' },
   { key: 'signed', label: 'Signed' },
 ];
