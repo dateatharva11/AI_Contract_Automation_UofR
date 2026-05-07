@@ -125,3 +125,15 @@ export function useAuditLogs(contractId: number) {
     enabled: !!contractId,
   });
 }
+
+export function useStatusHistory(contractId: number) {
+  return useQuery({
+    queryKey: ['/api/contracts', contractId, 'status-history'],
+    queryFn: async () => {
+      const res = await fetch(`/api/contracts/${contractId}/status-history`);
+      if (!res.ok) throw new Error("Failed to fetch status history");
+      return res.json();
+    },
+    enabled: !!contractId,
+  });
+}
