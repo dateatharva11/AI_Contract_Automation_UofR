@@ -190,7 +190,7 @@ export function buildPlaceholderValuesFromForm(formData: {
   vendorInfo?: string;
 }): Record<string, string> {
   // Process date
-  const startDateObj = formData.startDate ? new Date(formData.startDate) : new Date();
+  const startDateObj = new Date();
   const dateWordsResult = dateToWords(startDateObj);
   
   // Format vendor info if it contains JSON
