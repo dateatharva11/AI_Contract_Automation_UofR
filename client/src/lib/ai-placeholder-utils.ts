@@ -1,5 +1,31 @@
-// Interface for non-A141 templates (standard construction contracts)
-export interface StandardAIPlaceholderResponse {
+// Interface for A101 Lump Sum Contract
+export interface A101PlaceholderResponse {
+  contract_words: string;
+  contract_amount: string;
+  alternate_item_1: string;
+  alternate_price_1: string;
+  alternate_conditional_item_1: string;
+  alternate_conditional_price_1: string;
+  alternate_condition_1: string;
+  allowance_item_1: string;
+  allowance_price_1: string;
+  unit_price_item_1: string;
+  unit_price_limits_1: string;
+  unit_price_value_1: string;
+  retainage: string;
+  items_no_retainage: string;
+  retainage_provisions: string;
+  release_of_retainage: string;
+  interest_rate: string;
+  termination_amount: string;
+  portion_of_work: string;
+  completion_date: string;
+  liquidated_damages: string;
+  other_bonus_provisions: string;
+}
+
+// Interface for A102 Cost Plus Fee Contract
+export interface A102PlaceholderResponse {
   contractor_fee: string;
   fee_adjustment_method: string;
   subcontractor_profit_limitations: string;
@@ -23,7 +49,7 @@ export interface StandardAIPlaceholderResponse {
   off_site_personnel_costs: string;
 }
 
-// Interface for A141-2014 Design-Build Amendment template
+// Interface for A141 Design-Build Amendment
 export interface A141PlaceholderResponse {
   owner_program: string;
   owner_design_requirements: string;
@@ -52,7 +78,7 @@ export interface A141PlaceholderResponse {
 }
 
 // Union type for all placeholder responses
-export type AIPlaceholderResponse = StandardAIPlaceholderResponse | A141PlaceholderResponse;
+export type AIPlaceholderResponse = A101PlaceholderResponse | A102PlaceholderResponse | A141PlaceholderResponse;
 
 interface UserFormData {
   projectName: string;
@@ -77,6 +103,15 @@ interface UserFormData {
   selectedTemplateName?: string;
 }
 
+// Helper to determine template type
+export const getTemplateType = (templateName?: string): 'a101' | 'a102' | 'a141' => {
+  if (!templateName) return 'a102'; // default to a102
+  
+  if (templateName.includes('A101') || templateName.includes('Lump Sum')) return 'a101';
+  if (templateName.includes('A141') || templateName.includes('Design-Build')) return 'a141';
+  return 'a102'; // A102 or other standard templates
+};
+
 /**
  * Calls the AI API to generate values for the appropriate placeholder set
  * @param formData - All form data from the contract form
@@ -91,7 +126,7 @@ export async function generateAIPlaceholderValues(
     console.log("formData", formData);
     
     // Determine template type based on name
-    const isA141Template = formData.selectedTemplateName === "A141-2014 Design-Build Amendment";
+    const templateType = getTemplateType(formData.selectedTemplateName);
     
     const response = await fetch('/api/contracts/generate-placeholders', {
       method: 'POST',
@@ -101,7 +136,7 @@ export async function generateAIPlaceholderValues(
       body: JSON.stringify({
         formData,
         plainTemplateContent,
-        templateType: isA141Template ? 'a141' : 'standard',
+        templateType,
       }),
     });
 
@@ -112,9 +147,33 @@ export async function generateAIPlaceholderValues(
 
     const data = await response.json();
     
-    // Validate that the response matches the expected template type
-    if (isA141Template) {
-      // Ensure A141-specific fields are present
+    // Return the appropriate response based on template type
+    if (templateType === 'a101') {
+      return {
+        contract_words: data.contract_words || '',
+        contract_amount: data.contract_amount || '',
+        alternate_item_1: data.alternate_item_1 || '',
+        alternate_price_1: data.alternate_price_1 || '',
+        alternate_conditional_item_1: data.alternate_conditional_item_1 || '',
+        alternate_conditional_price_1: data.alternate_conditional_price_1 || '',
+        alternate_condition_1: data.alternate_condition_1 || '',
+        allowance_item_1: data.allowance_item_1 || '',
+        allowance_price_1: data.allowance_price_1 || '',
+        unit_price_item_1: data.unit_price_item_1 || '',
+        unit_price_limits_1: data.unit_price_limits_1 || '',
+        unit_price_value_1: data.unit_price_value_1 || '',
+        retainage: data.retainage || '',
+        items_no_retainage: data.items_no_retainage || '',
+        retainage_provisions: data.retainage_provisions || '',
+        release_of_retainage: data.release_of_retainage || '',
+        interest_rate: data.interest_rate || '',
+        termination_amount: data.termination_amount || '',
+        portion_of_work: data.portion_of_work || '',
+        completion_date: data.completion_date || '',
+        liquidated_damages: data.liquidated_damages || '',
+        other_bonus_provisions: data.other_bonus_provisions || '',
+      };
+    } else if (templateType === 'a141') {
       return {
         owner_program: data.owner_program || '',
         owner_design_requirements: data.owner_design_requirements || '',
@@ -142,7 +201,7 @@ export async function generateAIPlaceholderValues(
         hourly_billing_rates: data.hourly_billing_rates || '',
       };
     } else {
-      // Ensure standard fields are present
+      // A102 or standard templates
       return {
         contractor_fee: data.contractor_fee || '',
         fee_adjustment_method: data.fee_adjustment_method || '',
@@ -171,9 +230,34 @@ export async function generateAIPlaceholderValues(
     console.error('Error generating AI placeholder values:', error);
     
     // Return empty values based on template type
-    const isA141Template = formData.selectedTemplateName === "A141-2014 Design-Build Amendment";
+    const templateType = getTemplateType(formData.selectedTemplateName);
     
-    if (isA141Template) {
+    if (templateType === 'a101') {
+      return {
+        contract_words: '',
+        contract_amount: '',
+        alternate_item_1: '',
+        alternate_price_1: '',
+        alternate_conditional_item_1: '',
+        alternate_conditional_price_1: '',
+        alternate_condition_1: '',
+        allowance_item_1: '',
+        allowance_price_1: '',
+        unit_price_item_1: '',
+        unit_price_limits_1: '',
+        unit_price_value_1: '',
+        retainage: '',
+        items_no_retainage: '',
+        retainage_provisions: '',
+        release_of_retainage: '',
+        interest_rate: '',
+        termination_amount: '',
+        portion_of_work: '',
+        completion_date: '',
+        liquidated_damages: '',
+        other_bonus_provisions: '',
+      };
+    } else if (templateType === 'a141') {
       return {
         owner_program: '',
         owner_design_requirements: '',
