@@ -4,16 +4,150 @@ import { useContracts } from "@/hooks/use-contracts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/status-badge";
-import { FileText, Clock, CheckCircle2, ShieldAlert, Plus, ArrowRight } from "lucide-react";
+import { FileText, Clock, CheckCircle2, ShieldAlert, Plus, ArrowRight, Info } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 
+// Custom tooltip component
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="rounded-lg border bg-background p-2 shadow-md">
+        <p className="text-sm font-medium">
+          {label}: {payload[0].value}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
+// Helper function to fetch status history for a contract
+async function fetchContractSignedDate(contractId: number): Promise<Date | null> {
+  try {
+    const res = await fetch(`/api/contracts/${contractId}/status-history`);
+    const data = await res.json();
+    
+    if (data.success && data.statusHistory) {
+      // Find the signed status entry
+      const signedEntry = data.statusHistory.find((item: any) => item.status === 'signed');
+      if (signedEntry) {
+        // The signed entry's startDate is when it entered signed status
+        return new Date(signedEntry.startDate);
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error(`Failed to fetch status history for contract ${contractId}:`, error);
+    return null;
+  }
+}
+
+// Helper function to calculate average cycle time for signed contracts
+async function calculateAverageCycleTime(contracts: any[] | undefined): Promise<number | null> {
+  if (!contracts || contracts.length === 0) return null;
+  
+  // Filter only signed contracts
+  const signedContracts = contracts.filter(c => c.status === 'signed');
+  
+  if (signedContracts.length === 0) return null;
+  
+  let totalLifecycleDays = 0;
+  let validContractsCount = 0;
+  
+  // For each signed contract, fetch its status history to get the signed date
+  for (const contract of signedContracts) {
+    const startDate = new Date(contract.contractStartDate);
+    startDate.setHours(0, 0, 0, 0);
+    
+    // Get the signed date from status history
+    const signedDate = await fetchContractSignedDate(contract.id);
+    
+    if (signedDate) {
+      signedDate.setHours(0, 0, 0, 0);
+      
+      // Calculate difference in days
+      const diffTime = signedDate.getTime() - startDate.getTime();
+      const days = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+      
+      totalLifecycleDays += days;
+      validContractsCount++;
+    } else {
+      // Fallback: try to use lastActivityAt or endDate if status history not available
+      if (contract.lastActivityAt) {
+        const endDate = new Date(contract.lastActivityAt);
+        endDate.setHours(0, 0, 0, 0);
+        const diffTime = endDate.getTime() - startDate.getTime();
+        const days = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+        totalLifecycleDays += days;
+        validContractsCount++;
+      } else if (contract.endDate) {
+        const endDate = new Date(contract.endDate);
+        endDate.setHours(0, 0, 0, 0);
+        const diffTime = endDate.getTime() - startDate.getTime();
+        const days = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+        totalLifecycleDays += days;
+        validContractsCount++;
+      }
+    }
+  }
+  
+  if (validContractsCount === 0) return null;
+  
+  // Calculate average (rounded to nearest integer)
+  return Math.round(totalLifecycleDays / validContractsCount);
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const { data: contracts, isLoading } = useContracts();
+  const [averageCycleTime, setAverageCycleTime] = React.useState<number | null>(null);
+  const [signedContractsCount, setSignedContractsCount] = React.useState(0);
+  const [calculating, setCalculating] = React.useState(false);
 
-  if (isLoading) {
+  // Calculate average cycle time when contracts load
+  React.useEffect(() => {
+    async function computeCycleTime() {
+      if (contracts && contracts.length > 0 && !calculating) {
+        setCalculating(true);
+        const avg = await calculateAverageCycleTime(contracts);
+        setAverageCycleTime(avg);
+        setSignedContractsCount(contracts.filter(c => c.status === 'signed').length);
+        setCalculating(false);
+      }
+    }
+    
+    computeCycleTime();
+  }, [contracts]);
+
+  // Sort contracts by lastActivityAt (most recent first) for recent activity
+  const recentContracts = React.useMemo(() => {
+    if (!contracts) return [];
+    return [...contracts]
+      .sort((a, b) => {
+        const dateA = new Date(a.lastActivityAt || a.createdAt || 0);
+        const dateB = new Date(b.lastActivityAt || b.createdAt || 0);
+        return dateB.getTime() - dateA.getTime();
+      })
+      .slice(0, 5);
+  }, [contracts]);
+  
+  const activeContracts = contracts?.filter(c => c.status !== 'signed') || [];
+  const inReview = contracts?.filter(c => c.status === 'review') || [];
+  const flagged = contracts?.filter(c => {
+    const ai = c.aiAnalysis as any;
+    return ai && ai.flaggedClauses && ai.flaggedClauses.length > 0;
+  }) || [];
+
+  const chartData = [
+    { name: "Drafts", value: contracts?.filter(c => c.status === 'draft').length || 0 },
+    { name: "Review", value: inReview.length },
+    { name: "Approved", value: contracts?.filter(c => c.status === 'approved').length || 0 },
+    { name: "Signed", value: signedContractsCount },
+  ];
+
+  if (isLoading || calculating) {
     return (
       <div className="space-y-4">
         <div className="h-10 w-48 bg-muted animate-pulse rounded-md" />
@@ -24,21 +158,6 @@ export default function Dashboard() {
       </div>
     );
   }
-
-  const activeContracts = contracts?.filter(c => c.status !== 'signed') || [];
-  const inReview = contracts?.filter(c => c.status === 'review') || [];
-  const flagged = contracts?.filter(c => {
-    // Basic mock check to see if it has flagged items
-    const ai = c.aiAnalysis as any;
-    return ai && ai.flaggedClauses && ai.flaggedClauses.length > 0;
-  }) || [];
-
-  const chartData = [
-    { name: "Drafts", value: contracts?.filter(c => c.status === 'draft').length || 0 },
-    { name: "Review", value: inReview.length },
-    { name: "Approved", value: contracts?.filter(c => c.status === 'approved').length || 0 },
-    { name: "Signed", value: contracts?.filter(c => c.status === 'signed').length || 0 },
-  ];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -67,7 +186,7 @@ export default function Dashboard() {
             <CardTitle className="text-4xl font-display">{activeContracts.length}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">+2 from last week</p>
+            <p className="text-xs text-muted-foreground">Contracts in progress</p>
           </CardContent>
         </Card>
 
@@ -80,7 +199,7 @@ export default function Dashboard() {
             <CardTitle className="text-4xl font-display">{inReview.length}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">Needs your attention</p>
+            <p className="text-xs text-muted-foreground">Awaiting review and approval</p>
           </CardContent>
         </Card>
 
@@ -93,7 +212,7 @@ export default function Dashboard() {
             <CardTitle className="text-4xl font-display">{flagged.length}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">Clauses require negotiation</p>
+            <p className="text-xs text-muted-foreground">Clauses requiring attention</p>
           </CardContent>
         </Card>
 
@@ -102,11 +221,23 @@ export default function Dashboard() {
             <CheckCircle2 className="w-16 h-16" />
           </div>
           <CardHeader className="pb-2">
-            <CardDescription className="font-semibold text-emerald-600">Cycle Time</CardDescription>
-            <CardTitle className="text-4xl font-display">12<span className="text-xl text-muted-foreground ml-1">days</span></CardTitle>
+            <CardDescription className="font-semibold text-emerald-600 flex items-center gap-1">
+              Average Cycle Time
+            </CardDescription>
+            <CardTitle className="text-4xl font-display">
+              {averageCycleTime !== null ? (
+                <>{averageCycleTime}<span className="text-xl text-muted-foreground ml-1">days</span></>
+              ) : (
+                <span className="text-2xl text-muted-foreground">No data</span>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-emerald-600 font-medium">-15% improvement</p>
+            <p className="text-xs text-muted-foreground">
+              {averageCycleTime !== null 
+                ? `${signedContractsCount} signed contract${signedContractsCount !== 1 ? 's' : ''}`
+                : 'No signed contracts yet'}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -124,8 +255,8 @@ export default function Dashboard() {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))'}} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))'}} />
                 <Tooltip 
+                  content={<CustomTooltip />}
                   cursor={{fill: 'hsl(var(--muted))'}}
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
                 />
                 <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} maxBarSize={50} />
               </BarChart>
@@ -145,7 +276,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="flex-1">
             <div className="space-y-5">
-              {contracts?.slice(0, 5).map(contract => (
+              {recentContracts.map(contract => (
                 <Link key={contract.id} href={`/contracts/${contract.id}`}>
                   <div className="flex items-start gap-4 group cursor-pointer hover:bg-muted/50 p-2 -mx-2 rounded-lg transition-colors">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary group-hover:scale-110 transition-transform">
@@ -155,7 +286,9 @@ export default function Dashboard() {
                       <p className="text-sm font-semibold text-foreground truncate">{contract.projectName}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <StatusBadge status={contract.status} />
-                        <span className="text-xs text-muted-foreground truncate">{format(new Date(contract.createdAt!), 'MMM d, yyyy')}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(contract.lastActivityAt || contract.createdAt!), 'MMM d, yyyy')}
+                        </span>
                       </div>
                     </div>
                   </div>
