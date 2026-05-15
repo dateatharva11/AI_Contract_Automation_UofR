@@ -1,21 +1,26 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
+import { insertOwnerSchema } from "@shared/schema";
 
-// Define API endpoints for owners
-const ownersApi = {
-  list: { path: "/api/owners" },
-  create: { path: "/api/owners", method: "POST" },
-  update: { path: "/api/owners/:id", method: "PUT" },
-  delete: { path: "/api/owners/:id", method: "DELETE" },
+// Define types for Owner
+export type CreateOwnerRequest = {
+  name: string;
+  contactEmail: string;
+  phone?: string | null;
+  address?: string | null;
+  additionalInfo?: string | null;
 };
+
+export type UpdateOwnerRequest = Partial<CreateOwnerRequest>;
 
 export function useOwners() {
   return useQuery({
-    queryKey: [ownersApi.list.path],
+    queryKey: [api.owners.list.path],
     queryFn: async () => {
-      const res = await fetch(ownersApi.list.path);
+      const res = await fetch(api.owners.list.path);
       if (!res.ok) throw new Error("Failed to fetch owners");
-      return res.json();
+      return api.owners.list.responses[200].parse(await res.json());
     },
   });
 }
@@ -25,17 +30,20 @@ export function useCreateOwner() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (data: any) => {
-      const res = await fetch(ownersApi.create.path, {
-        method: ownersApi.create.method,
+    mutationFn: async (data: CreateOwnerRequest) => {
+      const res = await fetch(api.owners.create.path, {
+        method: api.owners.create.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Failed to create owner");
-      return res.json();
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to create owner");
+      }
+      return api.owners.create.responses[201].parse(await res.json());
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [ownersApi.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.owners.list.path] });
       toast({ title: "Owner created successfully" });
     },
     onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
@@ -47,17 +55,21 @@ export function useUpdateOwner() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      const res = await fetch(ownersApi.update.path.replace(":id", id.toString()), {
-        method: ownersApi.update.method,
+    mutationFn: async ({ id, data }: { id: number; data: UpdateOwnerRequest }) => {
+      const url = api.owners.update.path.replace(':id', id.toString());
+      const res = await fetch(url, {
+        method: api.owners.update.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Failed to update owner");
-      return res.json();
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to update owner");
+      }
+      return api.owners.update.responses[200].parse(await res.json());
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [ownersApi.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.owners.list.path] });
       toast({ title: "Owner updated successfully" });
     },
     onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
@@ -70,14 +82,18 @@ export function useDeleteOwner() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(ownersApi.delete.path.replace(":id", id.toString()), {
-        method: ownersApi.delete.method,
+      const url = api.owners.delete.path.replace(':id', id.toString());
+      const res = await fetch(url, {
+        method: api.owners.delete.method,
       });
-      if (!res.ok) throw new Error("Failed to delete owner");
-      return res.json();
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to delete owner");
+      }
+      return api.owners.delete.responses[200].parse(await res.json());
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [ownersApi.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.owners.list.path] });
       toast({ title: "Owner deleted successfully" });
     },
     onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
