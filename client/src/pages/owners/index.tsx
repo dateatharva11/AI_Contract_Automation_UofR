@@ -1,8 +1,8 @@
 // Owner directory page
 
 import React, { useState } from "react";
-import { useOwners, useCreateOwner } from "@/hooks/use-owners";
-import { useAuth } from "@/hooks/use-auth"; // This import was missing
+import { useOwners, useCreateOwner, useUpdateOwner, useDeleteOwner } from "@/hooks/use-owners";
+import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,15 +12,31 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertOwnerSchema } from "@shared/schema";
 import { z } from "zod";
-import { Search, Plus, ContactRound, Phone, Mail, MapPin } from "lucide-react";
+import { Search, Plus, ContactRound, Phone, Mail, MapPin, Pencil, Trash2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+type Owner = z.infer<typeof insertOwnerSchema> & { id: number };
 
 export default function OwnersList() {
-  const { user } = useAuth(); // Now this will work
+  const { user } = useAuth();
   const { data: owners, isLoading } = useOwners();
-  const { mutate: createOwner, isPending } = useCreateOwner();
+  const { mutate: createOwner, isPending: isCreating } = useCreateOwner();
+  const { mutate: updateOwner, isPending: isUpdating } = useUpdateOwner();
+  const { mutate: deleteOwner, isPending: isDeleting } = useDeleteOwner();
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingOwner, setEditingOwner] = useState<Owner | null>(null);
+  const [deletingOwner, setDeletingOwner] = useState<Owner | null>(null);
 
   const form = useForm<z.infer<typeof insertOwnerSchema>>({
     resolver: zodResolver(insertOwnerSchema),
@@ -33,19 +49,65 @@ export default function OwnersList() {
     }
   });
 
-  const filteredOwners = owners?.filter(v => 
-    v.name.toLowerCase().includes(search.toLowerCase()) || 
-    v.contactEmail.toLowerCase().includes(search.toLowerCase())
+  const filteredOwners = owners?.filter(owner => 
+    owner.name.toLowerCase().includes(search.toLowerCase()) || 
+    owner.contactEmail.toLowerCase().includes(search.toLowerCase())
   );
 
-  function onSubmit(values: z.infer<typeof insertOwnerSchema>) {
-    createOwner(values, {
-      onSuccess: () => {
-        setDialogOpen(false);
-        form.reset();
-      }
+  function handleEdit(owner: Owner) {
+    setEditingOwner(owner);
+    form.reset({
+      name: owner.name,
+      contactEmail: owner.contactEmail,
+      phone: owner.phone || "",
+      address: owner.address || "",
+      additionalInfo: owner.additionalInfo || "",
     });
+    setDialogOpen(true);
   }
+
+  function handleDelete(owner: Owner) {
+    setDeletingOwner(owner);
+  }
+
+  function confirmDelete() {
+    if (deletingOwner) {
+      deleteOwner(deletingOwner.id, {
+        onSuccess: () => {
+          setDeletingOwner(null);
+        }
+      });
+    }
+  }
+
+  function onSubmit(values: z.infer<typeof insertOwnerSchema>) {
+    if (editingOwner) {
+      updateOwner({ id: editingOwner.id, data: values }, {
+        onSuccess: () => {
+          setDialogOpen(false);
+          setEditingOwner(null);
+          form.reset();
+        }
+      });
+    } else {
+      createOwner(values, {
+        onSuccess: () => {
+          setDialogOpen(false);
+          form.reset();
+        }
+      });
+    }
+  }
+
+  function handleDialogClose(open: boolean) {
+    if (!open) {
+      setEditingOwner(null);
+      form.reset();
+    }
+    setDialogOpen(open);
+  }
+
+  const isPending = isCreating || isUpdating;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -55,8 +117,8 @@ export default function OwnersList() {
           <p className="text-muted-foreground mt-1">Manage project owners and owner representatives for your contracts.</p>
         </div>
 
-        {user?.role === 'contract_manager' && ( // Added optional chaining
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        {user?.role === 'contract_manager' && (
+          <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
             <DialogTrigger asChild>
               <Button className="hover-elevate shadow-md bg-primary hover:bg-primary/90 rounded-full px-6">
                 <Plus className="w-4 h-4 mr-2" />
@@ -65,13 +127,15 @@ export default function OwnersList() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle className="font-display text-2xl">Add New Owner</DialogTitle>
+                <DialogTitle className="font-display text-2xl">
+                  {editingOwner ? 'Edit Owner' : 'Add New Owner'}
+                </DialogTitle>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
                   <FormField control={form.control} name="name" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Company Name</FormLabel>
+                      <FormLabel>Company/Person Name</FormLabel>
                       <FormControl><Input {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -107,8 +171,10 @@ export default function OwnersList() {
                     </FormItem>
                   )}/>
                   <DialogFooter className="pt-4">
-                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                    <Button type="submit" disabled={isPending}>{isPending ? "Adding..." : "Add Owner"}</Button>
+                    <Button type="button" variant="outline" onClick={() => handleDialogClose(false)}>Cancel</Button>
+                    <Button type="submit" disabled={isPending}>
+                      {isPending ? (editingOwner ? "Saving..." : "Adding...") : (editingOwner ? "Save Changes" : "Add Owner")}
+                    </Button>
                   </DialogFooter>
                 </form>
               </Form>
@@ -135,6 +201,7 @@ export default function OwnersList() {
         <div className="text-center p-12 bg-card rounded-xl border border-border">
           <ContactRound className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
           <h3 className="text-lg font-bold">No owners found</h3>
+          <p className="text-muted-foreground mt-2">Get started by adding your first owner.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -146,7 +213,28 @@ export default function OwnersList() {
                   <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-bold text-xl font-display">
                     {owner.name.charAt(0)}
                   </div>
-                  <Button variant="ghost" size="sm" className="h-8 text-xs">Edit</Button>
+                  {user?.role === 'contract_manager' && (
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 text-xs"
+                        onClick={() => handleEdit(owner)}
+                      >
+                        <Pencil className="w-3 h-3 mr-1" />
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 text-xs text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(owner)}
+                      >
+                        <Trash2 className="w-3 h-3 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <h3 className="text-xl font-display font-bold text-foreground mb-4">{owner.name}</h3>
 
@@ -163,12 +251,46 @@ export default function OwnersList() {
                     <MapPin className="w-4 h-4 text-primary/70" />
                     <span className="truncate">{owner.address || 'No address provided'}</span>
                   </div>
+                  {owner.additionalInfo && (
+                    <div className="flex items-start gap-3">
+                      <div className="w-4 h-4 text-primary/70 mt-0.5">📋</div>
+                      <span className="line-clamp-2">{owner.additionalInfo}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingOwner} onOpenChange={() => setDeletingOwner(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <span className="font-semibold text-foreground">{deletingOwner?.name}</span>. 
+              This action cannot be undone.
+              {deletingOwner && (
+                <div className="mt-3 p-3 bg-destructive/10 rounded-lg text-sm text-destructive">
+                  ⚠️ Note: If this owner is associated with any contracts, deletion will be prevented.
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
