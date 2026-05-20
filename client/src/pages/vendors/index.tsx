@@ -1,8 +1,6 @@
-// Vendor / Contractor directory page
-
 import React, { useState } from "react";
-import { useVendors, useCreateVendor } from "@/hooks/use-vendors";
-import { useAuth } from "@/hooks/use-auth"; // This import was missing
+import { useVendors, useCreateVendor, useUpdateVendor, useDeleteVendor } from "@/hooks/use-vendors";
+import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,15 +10,31 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertVendorSchema } from "@shared/schema";
 import { z } from "zod";
-import { Search, Plus, Building2, Phone, Mail, MapPin } from "lucide-react";
+import { Search, Plus, Building2, Phone, Mail, MapPin, Pencil, Trash2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+type Vendor = z.infer<typeof insertVendorSchema> & { id: number };
 
 export default function VendorsList() {
-  const { user } = useAuth(); // Now this will work
+  const { user } = useAuth();
   const { data: vendors, isLoading } = useVendors();
-  const { mutate: createVendor, isPending } = useCreateVendor();
+  const { mutate: createVendor, isPending: isCreating } = useCreateVendor();
+  const { mutate: updateVendor, isPending: isUpdating } = useUpdateVendor();
+  const { mutate: deleteVendor, isPending: isDeleting } = useDeleteVendor();
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
+  const [deletingVendor, setDeletingVendor] = useState<Vendor | null>(null);
 
   const form = useForm<z.infer<typeof insertVendorSchema>>({
     resolver: zodResolver(insertVendorSchema),
@@ -38,14 +52,60 @@ export default function VendorsList() {
     v.contactEmail.toLowerCase().includes(search.toLowerCase())
   );
 
-  function onSubmit(values: z.infer<typeof insertVendorSchema>) {
-    createVendor(values, {
-      onSuccess: () => {
-        setDialogOpen(false);
-        form.reset();
-      }
+  function handleEdit(vendor: Vendor) {
+    setEditingVendor(vendor);
+    form.reset({
+      name: vendor.name,
+      contactEmail: vendor.contactEmail,
+      phone: vendor.phone || "",
+      address: vendor.address || "",
+      additionalInfo: vendor.additionalInfo || "",
     });
+    setDialogOpen(true);
   }
+
+  function handleDelete(vendor: Vendor) {
+    setDeletingVendor(vendor);
+  }
+
+  function confirmDelete() {
+    if (deletingVendor) {
+      deleteVendor(deletingVendor.id, {
+        onSuccess: () => {
+          setDeletingVendor(null);
+        }
+      });
+    }
+  }
+
+  function onSubmit(values: z.infer<typeof insertVendorSchema>) {
+    if (editingVendor) {
+      updateVendor({ id: editingVendor.id, data: values }, {
+        onSuccess: () => {
+          setDialogOpen(false);
+          setEditingVendor(null);
+          form.reset();
+        }
+      });
+    } else {
+      createVendor(values, {
+        onSuccess: () => {
+          setDialogOpen(false);
+          form.reset();
+        }
+      });
+    }
+  }
+
+  function handleDialogClose(open: boolean) {
+    if (!open) {
+      setEditingVendor(null);
+      form.reset();
+    }
+    setDialogOpen(open);
+  }
+
+  const isPending = isCreating || isUpdating;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -55,8 +115,8 @@ export default function VendorsList() {
           <p className="text-muted-foreground mt-1">Manage approved university contractors and vendors.</p>
         </div>
 
-        {user?.role === 'contract_manager' && ( // Added optional chaining
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        {user?.role === 'contract_manager' && (
+          <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
             <DialogTrigger asChild>
               <Button className="hover-elevate shadow-md bg-primary hover:bg-primary/90 rounded-full px-6">
                 <Plus className="w-4 h-4 mr-2" />
@@ -65,7 +125,9 @@ export default function VendorsList() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle className="font-display text-2xl">Add New Vendor</DialogTitle>
+                <DialogTitle className="font-display text-2xl">
+                  {editingVendor ? 'Edit Vendor' : 'Add New Vendor'}
+                </DialogTitle>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
@@ -107,8 +169,10 @@ export default function VendorsList() {
                     </FormItem>
                   )}/>
                   <DialogFooter className="pt-4">
-                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                    <Button type="submit" disabled={isPending}>{isPending ? "Adding..." : "Add Vendor"}</Button>
+                    <Button type="button" variant="outline" onClick={() => handleDialogClose(false)}>Cancel</Button>
+                    <Button type="submit" disabled={isPending}>
+                      {isPending ? (editingVendor ? "Saving..." : "Adding...") : (editingVendor ? "Save Changes" : "Add Vendor")}
+                    </Button>
                   </DialogFooter>
                 </form>
               </Form>
@@ -146,7 +210,28 @@ export default function VendorsList() {
                   <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-bold text-xl font-display">
                     {vendor.name.charAt(0)}
                   </div>
-                  <Button variant="ghost" size="sm" className="h-8 text-xs">Edit</Button>
+                  {user?.role === 'contract_manager' && (
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 text-xs"
+                        onClick={() => handleEdit(vendor)}
+                      >
+                        <Pencil className="w-3 h-3 mr-1" />
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 text-xs text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(vendor)}
+                      >
+                        <Trash2 className="w-3 h-3 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <h3 className="text-xl font-display font-bold text-foreground mb-4">{vendor.name}</h3>
 
@@ -169,6 +254,34 @@ export default function VendorsList() {
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingVendor} onOpenChange={() => setDeletingVendor(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete {deletingVendor?.name}. 
+              This action cannot be undone.
+              {deletingVendor && (
+                <div className="mt-2 text-sm text-destructive">
+                  Note: If this vendor is associated with any contracts, deletion will be prevented.
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
