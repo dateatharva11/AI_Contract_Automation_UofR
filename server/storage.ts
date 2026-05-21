@@ -19,6 +19,7 @@ export interface IStorage {
   getVendors(): Promise<Vendor[]>;
   createVendor(vendor: InsertVendor): Promise<Vendor>;
   updateVendor(id: number, vendor: UpdateVendorRequest): Promise<Vendor>;
+  deleteVendor(id: number): Promise<void>;
 
   // Templates
   getTemplates(): Promise<ContractTemplate[]>;
@@ -76,6 +77,9 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db.update(vendors).set(updates).where(eq(vendors.id, id)).returning();
     return updated;
   }
+  async deleteVendor(id: number): Promise<void> {
+    await db.delete(vendors).where(eq(vendors.id, id));
+  }
 
   // Owners
   async getOwners(): Promise<Owner[]> {
@@ -93,6 +97,9 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db.update(owners).set(updates).where(eq(owners.id, id)).returning();
     return updated;
   }
+  async deleteOwner(id: number): Promise<void> {
+    await db.delete(owners).where(eq(owners.id, id));
+  }
 
   // Architects
   async getArchitects(): Promise<Architect[]> {
@@ -109,6 +116,9 @@ export class DatabaseStorage implements IStorage {
   async updateArchitect(id: number, updates: UpdateArchitectRequest): Promise<Architect> {
     const [updated] = await db.update(architects).set(updates).where(eq(architects.id, id)).returning();
     return updated;
+  }
+  async deleteArchitect(id: number): Promise<void> {
+    await db.delete(architects).where(eq(architects.id, id));
   }
 
   // Templates
