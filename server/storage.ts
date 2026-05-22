@@ -21,6 +21,20 @@ export interface IStorage {
   updateVendor(id: number, vendor: UpdateVendorRequest): Promise<Vendor>;
   deleteVendor(id: number): Promise<void>;
 
+  // Owners
+  getOwners(): Promise<Owner[]>;
+  getOwner(id: number): Promise<Owner | undefined>;
+  createOwner(owner: InsertOwner): Promise<Owner>;
+  updateOwner(id: number, owner: UpdateOwnerRequest): Promise<Owner>;
+  deleteOwner(id: number): Promise<void>;
+
+  // Architects
+  getArchitects(): Promise<Architect[]>;
+  getArchitect(id: number): Promise<Architect | undefined>;
+  createArchitect(architect: InsertArchitect): Promise<Architect>;
+  updateArchitect(id: number, architect: UpdateArchitectRequest): Promise<Architect>;
+  deleteArchitect(id: number): Promise<void>;
+
   // Templates
   getTemplates(): Promise<ContractTemplate[]>;
   getTemplate(id: number): Promise<ContractTemplate | undefined>;
