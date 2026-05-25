@@ -178,7 +178,18 @@ export type InsertContractSection = z.infer<typeof insertContractSectionSchema>;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 export type CreateContractRequest = InsertContract;
-export type UpdateContractRequest = Partial<InsertContract> & { status?: string, documentContent?: string, placeholderData?: Record<string, any>, aiAnalysis?: any, checklist?: any, userId?: number };
+export type UpdateContractRequest = Partial<InsertContract> & { 
+  status?: string, 
+  documentContent?: string, 
+  placeholderData?: Record<string, any>, 
+  aiAnalysis?: any, 
+  checklist?: any, 
+  userId?: number,
+  submittedByUserId?: number,
+  assignedReviewerId?: number,
+  returnedToAdminReason?: string,
+  returnedToReviewerReason?: string
+};
 export type CreateVendorRequest = InsertVendor;
 export type UpdateVendorRequest = Partial<InsertVendor>;
 export type CreateSectionRequest = InsertContractSection;
