@@ -100,6 +100,10 @@ export const contracts = pgTable("contracts", {
   templateId: integer("template_id"),
   contract_docx_url: text("contract_docx_url"),       // This will store the URL of the generated DOCX file
   placeholder_data: jsonb("placeholder_data"),        // This will store the placeholder data for the contract
+  submittedByUserId: integer("submitted_by_user_id"),             // Admin who submitted for review
+  assignedReviewerId: integer("assigned_reviewer_id"),            // Currently assigned reviewer
+  returnedToAdminReason: text("returned_to_admin_reason"),        // Reason when reviewer returns to admin
+  returnedToReviewerReason: text("returned_to_reviewer_reason"),  // Reason when vendor returns to reviewer
 });
 
 // --- Notifications ---
@@ -178,6 +182,7 @@ export type InsertContractSection = z.infer<typeof insertContractSectionSchema>;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 export type CreateContractRequest = InsertContract;
+// export type UpdateContractRequest = Partial<InsertContract> & { status?: string, documentContent?: string, placeholderData?: Record<string, any>, aiAnalysis?: any, checklist?: any, userId?: number };
 export type UpdateContractRequest = Partial<InsertContract> & { 
   status?: string, 
   documentContent?: string, 
