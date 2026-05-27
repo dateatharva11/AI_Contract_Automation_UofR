@@ -180,7 +180,9 @@ export class DatabaseStorage implements IStorage {
 
   // Audit Logs
   async getAuditLogsByContract(contractId: number): Promise<AuditLog[]> {
-    return await db.select().from(auditLogs).where(eq(auditLogs.contractId, contractId));
+    return await db.select().from(auditLogs)
+      .where(eq(auditLogs.contractId, contractId))
+      .orderBy(desc(auditLogs.createdAt)); 
   }
   async createAuditLog(log: { contractId: number, userId: number, action: string, details?: string }): Promise<AuditLog> {
     const [newLog] = await db.insert(auditLogs).values(log).returning();
