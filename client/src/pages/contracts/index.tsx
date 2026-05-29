@@ -470,3 +470,18 @@ export default function ContractsList() {
     </>
   );
 }
+
+// Helper function for fallback
+function getFallbackResponsible(status: string): string {
+  switch (status) {
+    case 'draft':
+      return 'Contract Admininstrator (Admin)';
+    case 'review':
+      return 'Reviewer (Reviewer)';
+    case 'approved':
+    case 'signed':
+      return 'Vendor (Vendor)';
+    default:
+      return '-';
+  }
+}
