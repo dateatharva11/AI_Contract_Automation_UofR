@@ -25,6 +25,17 @@ export const api = {
       input: insertVendorSchema,
       responses: { 201: z.custom<typeof vendors.$inferSelect>(), 400: errorSchemas.validation },
     },
+    update: { 
+      method: 'PUT' as const,
+      path: '/api/vendors/:id' as const,
+      input: insertVendorSchema.partial(), 
+      responses: { 200: z.custom<typeof vendors.$inferSelect>(), 400: errorSchemas.validation, 404: errorSchemas.notFound },
+    },
+    delete: {   
+      method: 'DELETE' as const,
+      path: '/api/vendors/:id' as const,
+      responses: { 200: z.object({ success: z.boolean(), message: z.string() }), 404: errorSchemas.notFound },
+    },
   },
   owners: {
     list: {
@@ -43,6 +54,17 @@ export const api = {
       input: insertOwnerSchema,
       responses: { 201: z.custom<typeof owners.$inferSelect>(), 400: errorSchemas.validation },
     },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/owners/:id' as const,
+      input: insertOwnerSchema.partial(),
+      responses: { 200: z.custom<typeof owners.$inferSelect>(), 400: errorSchemas.validation, 404: errorSchemas.notFound },
+    },
+    delete: {   
+      method: 'DELETE' as const,
+      path: '/api/owners/:id' as const,
+      responses: { 200: z.object({ success: z.boolean(), message: z.string() }), 404: errorSchemas.notFound },
+    },
   },
   architects: {
     list: {
@@ -60,6 +82,17 @@ export const api = {
       path: '/api/architects' as const,
       input: insertArchitectSchema,
       responses: { 201: z.custom<typeof architects.$inferSelect>(), 400: errorSchemas.validation },
+    },
+    update: { 
+      method: 'PUT' as const,
+      path: '/api/architects/:id' as const,
+      input: insertArchitectSchema.partial(),
+      responses: { 200: z.custom<typeof architects.$inferSelect>(), 400: errorSchemas.validation, 404: errorSchemas.notFound },
+    },
+    delete: {   
+      method: 'DELETE' as const,
+      path: '/api/architects/:id' as const,
+      responses: { 200: z.object({ success: z.boolean(), message: z.string() }), 404: errorSchemas.notFound },
     },
   },
   contracts: {
