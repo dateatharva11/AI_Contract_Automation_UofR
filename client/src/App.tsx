@@ -27,7 +27,8 @@ function Router() {
         <Route path="/contracts/:id" component={ContractWorkspace} />
         <Route path="/vendors" component={VendorsList} />
         <Route path="/owners" component={OwnersList} />
-        <Route path="/architects" component={ArchitectsList} />        <Route component={NotFound} />
+        <Route path="/architects" component={ArchitectsList} />        
+        <Route component={NotFound} />
       </Switch>
     </Layout>
   );
