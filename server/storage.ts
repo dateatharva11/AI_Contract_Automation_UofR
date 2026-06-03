@@ -13,6 +13,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, data: Partial<User>): Promise<User | undefined>;
 
   // Vendors
   getVendor(id: number): Promise<Vendor | undefined>;
@@ -73,6 +74,10 @@ export class DatabaseStorage implements IStorage {
   async createUser(user: InsertUser): Promise<User> {
     const [newUser] = await db.insert(users).values(user).returning();
     return newUser;
+  }
+  async updateUser(id: number, data: Partial<User>): Promise<User | undefined> {
+    const result = await db.update(users).set(data).where(eq(users.id, id)).returning();
+    return result[0];
   }
 
   // Vendors
@@ -179,6 +184,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Audit Logs
+  // async getAuditLogsByContract(contractId: number): Promise<AuditLog[]> {
+  //   return await db.select().from(auditLogs).where(eq(auditLogs.contractId, contractId));
+  // }
   async getAuditLogsByContract(contractId: number): Promise<AuditLog[]> {
     return await db.select().from(auditLogs)
       .where(eq(auditLogs.contractId, contractId))
