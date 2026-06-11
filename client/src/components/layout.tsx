@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation, Link } from "wouter";
-import { Bell, FileText, LayoutDashboard, Building2, Settings, LogOut, GraduationCap, CheckCircle2, ShieldAlert, ChevronDown } from "lucide-react";
+import { Bell, FileText, LayoutDashboard, Building,Building2, Settings, LogOut, GraduationCap, CheckCircle2, ShieldAlert, ChevronDown, ContactRound } from "lucide-react";
 import { useNotifications, useMarkNotificationRead } from "@/hooks/use-notifications";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -22,20 +22,27 @@ import {
   SidebarFooter
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useAuth, AuthUser, Role } from "@/hooks/use-auth";
-import { useQuery } from "@tanstack/react-query";
-import { User } from "@shared/schema";
-
+import { useAuth } from "@/hooks/use-auth";
+import { UserProfilePopover } from "@/components/user-profile-popover";
 
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Contracts", url: "/contracts", icon: FileText },
   { title: "Vendors", url: "/vendors", icon: Building2 },
+  { title: "Owners", url: "/owners", icon: ContactRound },
+  { title: "Architects", url: "/architects", icon: Building },
 ];
 
 export function AppSidebar() {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+
+  if (!user) return null;
+
+  const roleLabel =
+    user.role === "contract_manager" ? "Contract Administrator"
+    : user.role === "reviewer" ? "Reviewer"
+    : "Vendor";
 
   return (
     <Sidebar variant="inset" className="border-r border-sidebar-border">
@@ -75,15 +82,36 @@ export function AppSidebar() {
 
       <SidebarFooter className="p-4 border-t border-sidebar-border bg-sidebar-accent/30">
         <div className="flex items-center gap-3">
-          <Avatar className="h-9 w-9 bg-primary-foreground text-primary font-bold shadow-sm">
-            <AvatarFallback>{user.fullName.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col overflow-hidden">
-            <span className="text-sm font-semibold truncate">{user.fullName}</span>
-            <span className="text-xs text-sidebar-primary/70 capitalize tracking-wide">
-              {user.role === "contract_manager" ? "Contract Manager" : user.role}
-            </span>
-          </div>
+          <UserProfilePopover user={user}>
+            <button
+              type="button"
+              className="flex items-center gap-3 flex-1 min-w-0 text-left rounded-md hover:bg-muted/50 p-1 -m-1 transition-colors"
+            >
+              <Avatar className="h-9 w-9 bg-primary-foreground text-primary font-bold shadow-sm shrink-0">
+                <AvatarFallback>{user.fullName.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-sm font-semibold truncate">{user.fullName}</span>
+                <div className="flex flex-wrap items-center gap-1">
+                  <span className="text-xs text-muted-foreground">Last login:</span>
+                  <span className="text-xs font-medium text-foreground">
+                    {user.lastLoginAt
+                      ? format(new Date(user.lastLoginAt), "MMM d, h:mm a")
+                      : "Never"}
+                  </span>
+                </div>
+              </div>
+            </button>
+          </UserProfilePopover>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={logout}
+            className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+            title="Sign out"
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
         </div>
       </SidebarFooter>
     </Sidebar>
@@ -97,6 +125,8 @@ function NotificationBell() {
   const { mutate: markRead } = useMarkNotificationRead();
   const unreadCount = notifications?.filter(n => !n.read).length || 0;
 
+  if (!user) return null;
+
   const handleNotificationClick = (notification: any) => {
     if (!notification.read) {
       markRead(notification.id);
@@ -107,7 +137,7 @@ function NotificationBell() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative hover:bg-muted rounded-full">
+        <Button variant="ghost" size="icon" className="relative hover:bg-muted rounded-full" data-testid="button-notifications">
           <Bell className="h-5 w-5 text-muted-foreground" />
           {unreadCount > 0 && (
             <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-accent text-white border-2 border-card rounded-full text-[10px] font-bold">
@@ -161,121 +191,6 @@ function NotificationBell() {
   );
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  contract_manager: "Contract Manager",
-  reviewer: "Reviewer",
-  vendor: "Vendor",
-};
-
-function UserSwitcher() {
-  const { user, setUser } = useAuth();
-  const [open, setOpen] = React.useState(false);
-
-  const { data: allUsers = [] } = useQuery<User[]>({
-    queryKey: ["/api/users"],
-  });
-
-  // Normalize legacy "admin" role to "contract_manager"
-  const normalizeRole = (role: string): Role => {
-    if (role === "admin") return "contract_manager";
-    return role as Role;
-  };
-
-  const handleSelect = (apiUser: User) => {
-    setUser({
-      id: apiUser.id,
-      fullName: apiUser.fullName,
-      email: apiUser.email,
-      role: normalizeRole(apiUser.role),
-      username: apiUser.username,
-    });
-    setOpen(false);
-  };
-
-  // Group users by normalized role
-  const grouped = allUsers.reduce<Record<string, User[]>>((acc, u) => {
-    const role = normalizeRole(u.role);
-    if (!acc[role]) acc[role] = [];
-    acc[role].push(u);
-    return acc;
-  }, {});
-
-  const roleOrder = ["contract_manager", "reviewer", "vendor"];
-
-  // Generate a consistent color based on user name
-  const getAvatarColor = (name: string) => {
-    const colors = [
-      "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500", 
-      "bg-purple-500", "bg-pink-500", "bg-indigo-500", "bg-orange-500"
-    ];
-    const index = name.charCodeAt(0) % colors.length;
-    return colors[index];
-  };
-
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-sm text-muted-foreground font-medium hidden sm:block">Viewing as:</span>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className="h-9 px-3 flex items-center gap-2 min-w-[180px] justify-between"
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <Avatar className={`h-6 w-6 ${getAvatarColor(user.fullName)} text-black shrink-0`}>
-                <AvatarFallback className="text-[11px] font-bold">{user.fullName.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <span className="text-sm font-medium truncate">{user.fullName}</span>
-            </div>
-            <ChevronDown className="w-4 h-4 opacity-50 shrink-0" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-72 p-2" align="end">
-          <div className="space-y-3">
-            {roleOrder.map((role) => {
-              const usersInRole = grouped[role];
-              if (!usersInRole || usersInRole.length === 0) return null;
-              return (
-                <div key={role}>
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-2 pb-1">
-                    {ROLE_LABELS[role] || role}
-                  </p>
-                  <div className="space-y-0.5">
-                    {usersInRole.map((u) => (
-                      <button
-                        key={u.id}
-                        onClick={() => handleSelect(u)}
-                        className={`w-full flex items-center gap-3 px-2 py-2 rounded-lg transition-colors text-left ${
-                          user.id === u.id
-                            ? "bg-primary/10"
-                            : "hover:bg-muted"
-                        }`}
-                      >
-                        <Avatar className={`h-7 w-7 ${getAvatarColor(u.fullName)} text-b shrink-0`}>
-                          <AvatarFallback className="text-xs font-bold">{u.fullName.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium truncate ${user.id === u.id ? "text-primary" : "text-foreground"}`}>
-                            {u.fullName}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground truncate">{u.email}</p>
-                        </div>
-                        {user.id === u.id && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
-}
-
 export function Layout({ children }: { children: React.ReactNode }) {
   
   return (
@@ -291,9 +206,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </h1>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
               <NotificationBell />
-              <UserSwitcher />
             </div>
           </header>
           
