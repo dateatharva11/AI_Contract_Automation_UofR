@@ -240,3 +240,5 @@ export function dateToWords(date: Date | string): {
     year: yearWords,
   };
 }
+
+export { numberToWords };
