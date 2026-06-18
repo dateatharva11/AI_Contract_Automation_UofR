@@ -8,9 +8,9 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { CalendarDays, Clock, CheckCircle2 } from "lucide-react";
+import { CalendarDays, Clock, CheckCircle2, AlertTriangle, ArrowLeft, ArrowRight, User } from "lucide-react";
 import { format } from "date-fns";
-import type { Contract } from "@shared/routes";
+import type { Contract } from "@shared/schema";
 
 interface StatusHistorySidebarProps {
   open: boolean;
@@ -27,6 +27,9 @@ interface StatusHistoryItem {
   displayLabel: string;
   icon: string;
   color: string;
+  userId: number;
+  userName: string;
+  userRole: string;
 }
 
 const statusBadgeBg: Record<string, string> = {
@@ -34,6 +37,16 @@ const statusBadgeBg: Record<string, string> = {
   review: "bg-amber-500",
   approved: "bg-emerald-500",
   signed: "bg-blue-500",
+};
+
+// Helper to get role display name
+const getRoleDisplayName = (role: string) => {
+  switch (role) {
+    case 'contract_manager': return 'Admin';
+    case 'reviewer': return 'Reviewer';
+    case 'vendor': return 'Vendor';
+    default: return role;
+  }
 };
 
 export function StatusHistorySidebar({ open, onOpenChange, contract, isLoading }: StatusHistorySidebarProps) {
@@ -87,7 +100,6 @@ export function StatusHistorySidebar({ open, onOpenChange, contract, isLoading }
   };
 
   const formatDateRange = (startDateValue: string | Date, endDateValue: string | Date | null, status: string) => {
-    // Convert to Date objects
     const startDate = startDateValue instanceof Date ? startDateValue : new Date(startDateValue);
     const start = format(startDate, 'MMM d, yyyy');
     
@@ -96,8 +108,6 @@ export function StatusHistorySidebar({ open, onOpenChange, contract, isLoading }
     }
     
     const endDate = endDateValue instanceof Date ? endDateValue : new Date(endDateValue);
-    
-    // For same day, just show the single date
     const startDay = startDate.toDateString();
     const endDay = endDate.toDateString();
     if (startDay === endDay) {
@@ -107,11 +117,21 @@ export function StatusHistorySidebar({ open, onOpenChange, contract, isLoading }
     return `${start} – ${format(endDate, 'MMM d, yyyy')}`;
   };
 
-  // Helper to safely format a single date
   const formatDate = (dateValue: string | Date | null | undefined) => {
     if (!dateValue) return 'N/A';
     const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
     return format(date, 'MMM d, yyyy');
+  };
+
+  const hasReturnInfo = () => {
+    return contract?.returnedToAdminReason || contract?.returnedToReviewerReason;
+  };
+
+  // Helper to get user info display
+  const getUserDisplay = (userName: string, userRole: string, userId: number) => {
+    if (userId === 0) return 'System';
+    const roleDisplay = getRoleDisplayName(userRole);
+    return `${userName} (${roleDisplay})`;
   };
 
   return (
@@ -139,6 +159,41 @@ export function StatusHistorySidebar({ open, onOpenChange, contract, isLoading }
           </div>
         ) : (
           <>
+            {/* Return Reasons Section */}
+            {hasReturnInfo() && (
+              <div className="mb-6 p-4 bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                <h4 className="font-semibold text-sm mb-3 flex items-center gap-2 text-orange-700 dark:text-orange-400">
+                  <AlertTriangle className="w-4 h-4" />
+                  Return Information
+                </h4>
+                
+                {contract?.returnedToAdminReason && (
+                  <div className="mb-3">
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1">
+                      <ArrowLeft className="w-3 h-3" />
+                      <span>Returned from Reviewer to Admin:</span>
+                    </div>
+                    <div className="p-2 bg-white dark:bg-orange-950/30 rounded-md border border-orange-100 dark:border-orange-800/50">
+                      <p className="text-sm">{contract.returnedToAdminReason}</p>
+                    </div>
+                    {contract.returnedToReviewerReason && <div className="my-2 border-t border-orange-200 dark:border-orange-800/50" />}
+                  </div>
+                )}
+                
+                {contract?.returnedToReviewerReason && (
+                  <div>
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1">
+                      <ArrowRight className="w-3 h-3" />
+                      <span>Returned from Vendor to Reviewer:</span>
+                    </div>
+                    <div className="p-2 bg-white dark:bg-orange-950/30 rounded-md border border-orange-100 dark:border-orange-800/50">
+                      <p className="text-sm">{contract.returnedToReviewerReason}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Contract Summary */}
             <div className="mb-6 p-4 bg-muted/30 rounded-lg">
               <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
@@ -148,7 +203,7 @@ export function StatusHistorySidebar({ open, onOpenChange, contract, isLoading }
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Draft Created:</span>
-                  <span>{formatDate(contract?.contractStartDate)}</span>
+                  <span>{formatDate(contract?.createdAt)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Project Timeline:</span>
@@ -165,7 +220,7 @@ export function StatusHistorySidebar({ open, onOpenChange, contract, isLoading }
               </div>
             </div>
 
-            {/* Status History Timeline */}
+            {/* Status History Timeline with User Info */}
             <div className="mb-6">
               <h4 className="font-semibold text-sm mb-4 flex items-center gap-2">
                 <Clock className="w-4 h-4" />
@@ -181,7 +236,8 @@ export function StatusHistorySidebar({ open, onOpenChange, contract, isLoading }
                   {/* Vertical timeline line */}
                   <div className="absolute left-[11px] top-3 bottom-3 w-0.5 bg-border" />
                   
-                  {statusHistory.map((item, index) => (
+                  {/* Reverse the order - show most recent first */}
+                  {[...statusHistory].reverse().map((item, index) => (
                     <div key={index} className="relative">
                       {/* Timeline dot */}
                       <div 
@@ -193,7 +249,7 @@ export function StatusHistorySidebar({ open, onOpenChange, contract, isLoading }
                           <span className="text-base">{item.icon}</span>
                           <span className="font-medium text-foreground">{item.displayLabel}</span>
                           
-                          {/* Duration Badge - Only show if duration > 0 */}
+                          {/* Duration Badge */}
                           {item.durationDays > 0 && (
                             <Badge variant="outline" className="text-xs">
                               {item.durationDays} day{item.durationDays !== 1 ? 's' : ''}
@@ -216,12 +272,22 @@ export function StatusHistorySidebar({ open, onOpenChange, contract, isLoading }
                           )}
                         </div>
                         
+                        {/* User who was responsible during this status */}
+                        {item.userId !== 0 && (
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                            <User className="w-3 h-3" />
+                            <span>
+                              {getUserDisplay(item.userName, item.userRole, item.userId)}
+                            </span>
+                          </div>
+                        )}
+                        
                         {/* Date range */}
                         <div className="text-xs text-muted-foreground">
                           {formatDateRange(item.startDate, item.endDate, item.status)}
                         </div>
                         
-                        {/* Duration text (if has meaningful duration) */}
+                        {/* Duration text */}
                         {item.durationDays > 0 && item.endDate && (
                           <div className="text-xs text-muted-foreground/70">
                             Duration: {item.durationDays} day{item.durationDays !== 1 ? 's' : ''}
