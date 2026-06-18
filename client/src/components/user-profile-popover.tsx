@@ -46,7 +46,7 @@ export function UserProfilePopover({ user, children }: { user: AuthUser; childre
             </div>
           </dl>
           <Button variant="outline" size="sm" className="w-full" asChild>
-            <Link href="/activity">View all activity</Link>
+            <Link href="/activity">{user.role === "contract_manager" ? "View activity log" : "View my activity"}</Link>
           </Button>
         </div>
       </PopoverContent>
