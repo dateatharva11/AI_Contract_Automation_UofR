@@ -68,8 +68,11 @@ export function useUpdateContract() {
       return api.contracts.update.responses[200].parse(await res.json());
     },
     onSuccess: (_, variables) => {
+      // Invalidate both the specific contract and the list
       queryClient.invalidateQueries({ queryKey: [api.contracts.get.path, variables.id] });
       queryClient.invalidateQueries({ queryKey: [api.contracts.list.path] });
+      // Also invalidate audit logs for this contract
+      queryClient.invalidateQueries({ queryKey: [api.contracts.getAuditLogs.path, variables.id] });
     },
     onError: (err) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });

@@ -143,12 +143,6 @@ export function ExhibitAttachment({
     }
   };
 
-//   const handleView = () => {
-//     if (fileUrl) {
-//       window.open(fileUrl, '_blank');
-//     }
-//   };
-
   // If disabled, show read-only view
   if (isDisabled) {
     return (

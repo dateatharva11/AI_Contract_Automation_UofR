@@ -6,7 +6,7 @@ import {
   type UpdateContractRequest, type UpdateVendorRequest, type UpdateSectionRequest, type InsertOwner, type InsertArchitect, type Owner, type Architect,
   type UpdateOwnerRequest, type UpdateArchitectRequest
 } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql, and } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -55,6 +55,24 @@ export interface IStorage {
   // Audit Logs
   getAuditLogsByContract(contractId: number): Promise<AuditLog[]>;
   createAuditLog(log: { contractId: number, userId: number, action: string, details?: string }): Promise<AuditLog>;
+
+  // User Activity
+  getAuditLogsByUser(userId: number, limit?: number): Promise<any[]>;
+  touchUserActivity(userId: number): Promise<void>;
+
+  // Admin activity with filters
+  getAuditLogs(filters: {
+    userId?: number;
+    userIds?: number[];
+    actions?: string[];
+    search?: string;
+    dateFrom?: Date;
+    dateTo?: Date;
+    sortBy?: "createdAt" | "projectName" | "userFullName" | "action";
+    sortOrder?: "asc" | "desc";
+    limit?: number;
+    offset?: number;
+  }): Promise<{ items: any[]; total: number }>;
 
   // Notifications
   getNotifications(userId: number): Promise<Notification[]>;
@@ -184,9 +202,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Audit Logs
-  // async getAuditLogsByContract(contractId: number): Promise<AuditLog[]> {
-  //   return await db.select().from(auditLogs).where(eq(auditLogs.contractId, contractId));
-  // }
   async getAuditLogsByContract(contractId: number): Promise<AuditLog[]> {
     return await db.select().from(auditLogs)
       .where(eq(auditLogs.contractId, contractId))
@@ -194,7 +209,131 @@ export class DatabaseStorage implements IStorage {
   }
   async createAuditLog(log: { contractId: number, userId: number, action: string, details?: string }): Promise<AuditLog> {
     const [newLog] = await db.insert(auditLogs).values(log).returning();
+    // Touch the user's last active timestamp
+    await db.update(users)
+      .set({ lastActiveAt: new Date() })
+      .where(eq(users.id, log.userId));
     return newLog;
+  }
+
+  // User Activity  
+  async touchUserActivity(userId: number): Promise<void> {
+    await db.update(users)
+      .set({ lastActiveAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
+  async getAuditLogs(filters: {
+    userId?: number;
+    userIds?: number[];
+    actions?: string[];
+    search?: string;
+    dateFrom?: Date;
+    dateTo?: Date;
+    sortBy?: "createdAt" | "projectName" | "userFullName" | "action";
+    sortOrder?: "asc" | "desc";
+    limit?: number;
+    offset?: number;
+  }): Promise<{ items: any[]; total: number }> {
+    const {
+      userId,
+      userIds,
+      actions,
+      search,
+      dateFrom,
+      dateTo,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      limit = 25,
+      offset = 0,
+    } = filters;
+
+    // Build the base query with joins
+    let query = db
+      .select({
+        id: auditLogs.id,
+        action: auditLogs.action,
+        details: auditLogs.details,
+        createdAt: auditLogs.createdAt,
+        contractId: auditLogs.contractId,
+        projectName: contracts.projectName,
+        projectNumber: contracts.projectNumber,
+        contractStatus: contracts.status,
+        userId: users.id,
+        userFullName: users.fullName,
+        userRole: users.role,
+      })
+      .from(auditLogs)
+      .innerJoin(contracts, eq(auditLogs.contractId, contracts.id))
+      .innerJoin(users, eq(auditLogs.userId, users.id));
+
+    // Build where conditions
+    const conditions = [];
+
+    if (userId) {
+      conditions.push(eq(auditLogs.userId, userId));
+    }
+    if (userIds && userIds.length > 0) {
+      conditions.push(sql`${auditLogs.userId} IN (${userIds.join(',')})`);
+    }
+    if (actions && actions.length > 0) {
+      conditions.push(sql`${auditLogs.action} IN (${actions.map(a => `'${a}'`).join(',')})`);
+    }
+    if (search) {
+      conditions.push(
+        sql`(${contracts.projectName} ILIKE ${`%${search}%`} OR ${contracts.projectNumber} ILIKE ${`%${search}%`} OR ${users.fullName} ILIKE ${`%${search}%`})`
+      );
+    }
+    if (dateFrom) {
+      conditions.push(sql`${auditLogs.createdAt} >= ${dateFrom}`);
+    }
+    if (dateTo) {
+      conditions.push(sql`${auditLogs.createdAt} <= ${dateTo}`);
+    }
+    // Apply where conditions
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    // Get total count
+    const countQuery = db
+      .select({ count: sql<number>`count(*)` })
+      .from(auditLogs)
+      .innerJoin(contracts, eq(auditLogs.contractId, contracts.id))
+      .innerJoin(users, eq(auditLogs.userId, users.id));
+
+    if (conditions.length > 0) {
+      countQuery.where(and(...conditions));
+    }
+
+    const [countResult] = await countQuery;
+    const total = Number(countResult?.count || 0);
+
+    // Apply sorting
+    const sortColumnMap = {
+      createdAt: auditLogs.createdAt,
+      projectName: contracts.projectName,
+      userFullName: users.fullName,
+      action: auditLogs.action,
+    };
+    const sortColumn = sortColumnMap[sortBy] || auditLogs.createdAt;
+    query = query.orderBy(sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn));
+
+    // Apply pagination
+    query = query.limit(limit).offset(offset);
+
+    const items = await query;
+    return { items, total };
+  }
+
+  async getAuditLogsByUser(userId: number, limit = 20): Promise<any[]> {
+    const result = await this.getAuditLogs({
+      userId,
+      limit,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    });
+    return result.items;
   }
 
   // Notifications

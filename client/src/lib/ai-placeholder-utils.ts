@@ -22,6 +22,14 @@ export interface A101PlaceholderResponse {
   completion_date: string;
   liquidated_damages: string;
   other_bonus_provisions: string;
+  doc_1: string;
+  doc_2: string;
+  doc_3: string;
+  commencement_date: string;
+  bdr_1: string;
+  bdr_2: string;
+  bdr_3: string;
+  bdr_other: string;
 }
 
 // Interface for A102 Cost Plus Fee Contract
@@ -123,8 +131,6 @@ export async function generateAIPlaceholderValues(
   plainTemplateContent: string
 ): Promise<AIPlaceholderResponse> {
   try {
-    console.log("formData", formData);
-    
     // Determine template type based on name
     const templateType = getTemplateType(formData.selectedTemplateName);
     
@@ -172,6 +178,14 @@ export async function generateAIPlaceholderValues(
         completion_date: data.completion_date || '',
         liquidated_damages: data.liquidated_damages || '',
         other_bonus_provisions: data.other_bonus_provisions || '',
+        doc_1: data.doc_1 || '',
+        doc_2: data.doc_2 || '',
+        doc_3: data.doc_3 || '',
+        commencement_date: data.commencement_date || '',
+        bdr_1: data.bdr_1 || '',
+        bdr_2: data.bdr_2 || '',
+        bdr_3: data.bdr_3 || '',
+        bdr_other: data.bdr_other || '',
       };
     } else if (templateType === 'a141') {
       return {
@@ -256,6 +270,14 @@ export async function generateAIPlaceholderValues(
         completion_date: '',
         liquidated_damages: '',
         other_bonus_provisions: '',
+        doc_1: '',
+        doc_2: '',
+        doc_3: '',
+        commencement_date: '',
+        bdr_1: '',
+        bdr_2: '',
+        bdr_3: '',
+        bdr_other: '',
       };
     } else if (templateType === 'a141') {
       return {

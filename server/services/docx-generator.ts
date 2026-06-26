@@ -88,7 +88,6 @@ export async function generateDocxFromTemplate(
 ): Promise<string> {
     console.log(`Attempting to download template from bucket: ${TEMPLATE_BUCKET}`);
     console.log(`Template file path: ${templateFilePath}`);
-    console.log(`Placeholder data keys:`, Object.keys(data));
   
   // First, check if the file exists in the bucket
   const { data: fileList, error: listError } = await supabase.storage
@@ -151,18 +150,18 @@ export async function generateDocxFromTemplate(
   
   // Log original placeholders (for debugging)
   const originalPlaceholders = extractContiguousPlaceholders(documentXmlContent);
-  console.log(`Found ${originalPlaceholders.length} contiguous placeholder(s):`, originalPlaceholders);
+  // console.log(`Found ${originalPlaceholders.length} contiguous placeholder(s):`, originalPlaceholders);
 
   // Log which placeholders might be missing from data
   logMissingPlaceholders(documentXmlContent, data);
   
   // Clean up split placeholders
-  console.log("Cleaning up split placeholders...");
+  // console.log("Cleaning up split placeholders...");
   let cleanedXmlContent = cleanupSplitPlaceholders(documentXmlContent);
   
   // Verify only valid placeholders remain
   const remainingPlaceholders = extractContiguousPlaceholders(cleanedXmlContent);
-  console.log(`After cleanup: ${remainingPlaceholders.length} contiguous placeholder(s) remaining:`, remainingPlaceholders);
+  // console.log(`After cleanup: ${remainingPlaceholders.length} contiguous placeholder(s) remaining:`, remainingPlaceholders);
   
   // Update the zip with the cleaned XML
   zip.remove(documentXmlPath);

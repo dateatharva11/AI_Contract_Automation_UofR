@@ -6,17 +6,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Define the Template type based on your schema
-// interface Template {
-//   id: number;
-//   name: string;
-//   description: string;
-//   default_project_name: string | null;
-//   default_budget_amount: string | null;
-//   default_duration_months: number | null;
-//   base_content: string | null;
-// }
-
 export default function SelectTemplate() {
   const [, setLocation] = useLocation();
   const { data: templates, isLoading, error } = useTemplates();

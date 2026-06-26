@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api, buildUrl } from "@/lib/api";
 import { ContractTemplate } from "@shared/schema";
 
 export function useTemplates() {

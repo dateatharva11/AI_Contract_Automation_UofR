@@ -1,7 +1,14 @@
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+
+declare module "express-session" {
+  interface SessionData {
+    userId: number;
+  }
+}
 
 const app = express();
 const httpServer = createServer(app);
@@ -11,6 +18,17 @@ declare module "http" {
     rawBody: unknown;
   }
 }
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || "university-contract-portal-secret-key",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false,
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  },
+}));
 
 // ADD MIDDLEWARE FOR COOP/COEP HEADERS - Place this BEFORE other middleware
 app.use((req, res, next) => {

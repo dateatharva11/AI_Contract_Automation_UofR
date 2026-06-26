@@ -4,7 +4,7 @@ import { useContracts } from "@/hooks/use-contracts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/status-badge";
-import { FileText, Clock, CheckCircle2, ShieldAlert, Plus, ArrowRight, Info } from "lucide-react";
+import { FileText, Clock, CheckCircle2, ShieldAlert, Plus, ArrowRight, Info, Building2, Users } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
@@ -58,7 +58,7 @@ async function calculateAverageCycleTime(contracts: any[] | undefined): Promise<
   
   // For each signed contract, fetch its status history to get the signed date
   for (const contract of signedContracts) {
-    const startDate = new Date(contract.contractStartDate);
+    const startDate = new Date(contract.createdAt);
     startDate.setHours(0, 0, 0, 0);
     
     // Get the signed date from status history
@@ -134,7 +134,11 @@ export default function Dashboard() {
   }, [contracts]);
   
   const activeContracts = contracts?.filter(c => c.status !== 'signed') || [];
-  const inReview = contracts?.filter(c => c.status === 'review') || [];
+  
+  // New metrics
+  const contractsWithUniversity = contracts?.filter(c => c.status === 'draft' || c.status === 'review') || [];
+  const contractsWithVendor = contracts?.filter(c => c.status === 'approved') || [];
+  
   const flagged = contracts?.filter(c => {
     const ai = c.aiAnalysis as any;
     return ai && ai.flaggedClauses && ai.flaggedClauses.length > 0;
@@ -142,8 +146,8 @@ export default function Dashboard() {
 
   const chartData = [
     { name: "Drafts", value: contracts?.filter(c => c.status === 'draft').length || 0 },
-    { name: "Review", value: inReview.length },
-    { name: "Approved", value: contracts?.filter(c => c.status === 'approved').length || 0 },
+    { name: "Review", value: contracts?.filter(c => c.status === 'review').length || 0 },
+    { name: "Approved", value: contractsWithVendor.length },
     { name: "Signed", value: signedContractsCount },
   ];
 
@@ -151,8 +155,8 @@ export default function Dashboard() {
     return (
       <div className="space-y-4">
         <div className="h-10 w-48 bg-muted animate-pulse rounded-md" />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1,2,3,4].map(i => <div key={i} className="h-32 bg-muted animate-pulse rounded-xl" />)}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          {[1,2,3,4,5].map(i => <div key={i} className="h-32 bg-muted animate-pulse rounded-xl" />)}
         </div>
         <div className="h-96 bg-muted animate-pulse rounded-xl mt-8" />
       </div>
@@ -166,7 +170,7 @@ export default function Dashboard() {
           <h1 className="text-3xl font-display font-bold text-foreground">Welcome back</h1>
           <p className="text-muted-foreground mt-1">Here's what's happening with your contracts today.</p>
         </div>
-        {user.role === 'contract_manager' && (
+        {user?.role === 'contract_manager' && (
           <Button asChild className="hover-elevate shadow-md bg-primary hover:bg-primary/90 rounded-full px-6">
             <Link href="/contracts/select-template">
               <Plus className="w-4 h-4 mr-2" />
@@ -176,7 +180,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         <Card className="hover-elevate glass-panel overflow-hidden relative">
           <div className="absolute top-0 right-0 p-4 opacity-10">
             <FileText className="w-16 h-16" />
@@ -190,16 +194,37 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
+        {/* Card 2: Contracts with University (Drafts + Review) */}
         <Card className="hover-elevate glass-panel overflow-hidden relative">
-          <div className="absolute top-0 right-0 p-4 opacity-10 text-amber-500">
-            <Clock className="w-16 h-16" />
+          <div className="absolute top-0 right-0 p-4 opacity-10 text-blue-500">
+            <Building2 className="w-16 h-16" />
           </div>
           <CardHeader className="pb-2">
-            <CardDescription className="font-semibold text-amber-600">Pending Review</CardDescription>
-            <CardTitle className="text-4xl font-display">{inReview.length}</CardTitle>
+            <CardDescription className="font-semibold text-blue-600 flex items-center gap-1">
+              <Building2 className="w-4 h-4" />
+              Contracts
+            </CardDescription>
+            <CardTitle className="text-4xl font-display">{contractsWithUniversity.length}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">Awaiting review and approval</p>
+            <p className="text-xs text-muted-foreground">Contracts in university's court</p>
+          </CardContent>
+        </Card>
+
+        {/* Card 3: Contracts with Vendor (Approved) */}
+        <Card className="hover-elevate glass-panel overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-4 opacity-10 text-yellow-500">
+            <Users className="w-16 h-16" />
+          </div>
+          <CardHeader className="pb-2">
+            <CardDescription className="font-semibold text-yellow-600 flex items-center gap-1">
+              <Users className="w-4 h-4" />
+              Vendor Contracts
+            </CardDescription>
+            <CardTitle className="text-4xl font-display">{contractsWithVendor.length}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">Contracts in vendor's court</p>
           </CardContent>
         </Card>
 

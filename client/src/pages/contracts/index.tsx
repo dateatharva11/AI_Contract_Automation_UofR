@@ -6,7 +6,9 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/status-badge";
-import { Search, Plus, FileText, ChevronRight, Filter, X, ArrowUpDown, ArrowUp, ArrowDown, Info, User } from "lucide-react";
+import { exportContractsToExcel } from "@/lib/contracts-excel-export"; 
+import { useToast } from "@/hooks/use-toast";
+import { Search, Plus, FileText, ChevronRight, Filter, X, ArrowUpDown, ArrowUp, ArrowDown, Info, User, FileSpreadsheet, Download } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
 import {
@@ -18,9 +20,9 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { StatusHistorySidebar } from "@/components/status-history-sidebar";
-import type { Contract } from "@shared/routes";
+import type { Contract } from "@shared/schema";
 
-type SortField = 'projectName' | 'startDate' | 'budgetAmount' | 'contractStartDate';
+type SortField = 'projectName' | 'startDate' | 'budgetAmount' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
 
 // Get unique responsible person options from contracts
@@ -36,13 +38,14 @@ const getAvailableResponsiblePersons = (contracts: any[]) => {
 
 export default function ContractsList() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const { data: vendors } = useVendors();
   const { contracts: allContracts, isLoading: contractsLoading } = useContractsWithResponsible();
   const [search, setSearch] = useState("");
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
   const [selectedResponsiblePersons, setSelectedResponsiblePersons] = useState<string[]>([]);
-  const [sortField, setSortField] = useState<SortField>('contractStartDate');
+  const [sortField, setSortField] = useState<SortField>('createdAt');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   
   // Sidebar state
@@ -77,6 +80,32 @@ export default function ContractsList() {
     setSidebarOpen(true);
   };
 
+  const handleExportExcel = () => {
+    if (filteredAndSortedContracts.length === 0) {
+      toast({
+        title: "Nothing to export",
+        description: "No contracts match your current filters.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      exportContractsToExcel(filteredAndSortedContracts, vendors);
+      toast({
+        title: "Export successful",
+        description: `${filteredAndSortedContracts.length} contract(s) exported to Excel.`,
+      });
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast({
+        title: "Export failed",
+        description: "There was an error exporting the contracts. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredAndSortedContracts = React.useMemo(() => {
     if (!allContracts) return [];
 
@@ -102,8 +131,8 @@ export default function ContractsList() {
         case 'startDate':
           comparison = new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
           break;
-        case 'contractStartDate':
-          comparison = new Date(a.contractStartDate).getTime() - new Date(b.contractStartDate).getTime();
+        case 'createdAt':
+          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
           break;
         case 'budgetAmount':
           comparison = Number(a.budgetAmount) - Number(b.budgetAmount);
@@ -176,6 +205,15 @@ export default function ContractsList() {
                     )}
                   </Button>
                 </DropdownMenuTrigger>
+                <Button 
+                  variant="outline" 
+                  className="rounded-full shadow-sm"
+                  onClick={handleExportExcel}
+                  disabled={contractsLoading || filteredAndSortedContracts.length === 0}
+                >
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Export as Excel
+                </Button>
                 <DropdownMenuContent className="w-64" align="start">
                   <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
                   {availableStatuses.map((status) => (
@@ -333,11 +371,11 @@ export default function ContractsList() {
                     <th className="px-6 py-4 font-medium hidden md:table-cell">Vendor</th>
                     <th 
                       className="px-6 py-4 font-medium cursor-pointer hover:bg-muted/70 transition-colors group"
-                      onClick={() => handleSort('contractStartDate')}
+                      onClick={() => handleSort('createdAt')}
                     >
                       <div className="flex items-center">
                         Draft Created
-                        {getSortIcon('contractStartDate')}
+                        {getSortIcon('createdAt')}
                       </div>
                     </th>
                     <th 
@@ -398,7 +436,7 @@ export default function ContractsList() {
                         
                         {/* Draft Created Date */}
                         <td className="px-6 py-4">
-                          <div className="font-medium">{format(new Date(contract.contractStartDate), 'MMM d, yyyy')}</div>
+                          <div className="font-medium">{format(new Date(contract.createdAt), 'MMM d, yyyy')}</div>
                         </td>
                         
                         {/* Project Timeline */}
@@ -453,7 +491,7 @@ export default function ContractsList() {
                 {hasActiveFilters && ` (filtered from ${allContracts?.length || 0} total)`}
               </span>
               <span className="text-xs">
-                Sorted by: {sortField === 'projectName' ? 'Project Name' : sortField === 'contractStartDate' ? 'Draft Created Date' : sortField === 'startDate' ? 'Project Start Date' : 'Budget'} ({sortOrder === 'asc' ? 'Ascending' : 'Descending'})
+                Sorted by: {sortField === 'projectName' ? 'Project Name' : sortField === 'createdAt' ? 'Draft Created Date' : sortField === 'startDate' ? 'Project Start Date' : 'Budget'} ({sortOrder === 'asc' ? 'Ascending' : 'Descending'})
               </span>
             </div>
           )}

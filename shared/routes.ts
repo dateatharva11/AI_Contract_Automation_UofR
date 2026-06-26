@@ -1,5 +1,7 @@
 import { z } from 'zod';
-import { insertContractSchema, insertVendorSchema, insertOwnerSchema, insertArchitectSchema, insertContractSectionSchema, insertUserSchema, contracts, vendors, contractSections, auditLogs, users, owners, architects } from './schema';
+import { insertContractSchema, insertVendorSchema, insertOwnerSchema, insertArchitectSchema, insertContractSectionSchema, insertUserSchema, 
+  contracts, vendors, contractSections, auditLogs, users, owners, architects, 
+  contractTemplates, notifications, adminActivityQuerySchema } from './schema';
 
 export const errorSchemas = {
   validation: z.object({ message: z.string(), field: z.string().optional() }),
@@ -151,7 +153,23 @@ export const api = {
       method: 'GET' as const,
       path: '/api/users' as const,
       responses: { 200: z.array(z.custom<typeof users.$inferSelect>()) },
-    }
+    },
+    meActivity: {
+      method: 'GET' as const,
+      path: '/api/users/me/activity' as const,
+      responses: {
+        200: z.array(z.object({
+          id: z.number(),
+          action: z.string(),
+          details: z.string().nullable(),
+          createdAt: z.coerce.date().nullable(),
+          contractId: z.number(),
+          projectName: z.string(),
+          projectNumber: z.string(),
+          contractStatus: z.string(),
+        })),
+      },
+    },
   },
   templates: {
     list: {
@@ -189,7 +207,35 @@ export const api = {
       input: insertContractSectionSchema.partial(),
       responses: { 200: z.custom<typeof contractSections.$inferSelect>(), 404: errorSchemas.notFound },
     }
-  }
+  },
+  admin: {
+    activity: {
+      method: 'GET' as const,
+      path: '/api/admin/activity' as const,
+      query: adminActivityQuerySchema,
+      responses: {
+        200: z.object({
+          items: z.array(z.object({
+            id: z.number(),
+            action: z.string(),
+            details: z.string().nullable(),
+            createdAt: z.coerce.date().nullable(),
+            contractId: z.number(),
+            projectName: z.string(),
+            projectNumber: z.string(),
+            contractStatus: z.string(),
+            userId: z.number(),
+            userFullName: z.string(),
+            userRole: z.string(),
+          })),
+          total: z.number(),
+          page: z.number(),
+          pageSize: z.number(),
+        }),
+        403: z.object({ message: z.string() }),
+      },
+    },
+  },
 };
 
 export function buildUrl(path: string, params?: Record<string, string | number>): string {
